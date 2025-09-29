@@ -12,7 +12,7 @@ import { InventoryItem, InventoryItemType } from "@/components/InventoryItem";
 import { AddItemDialog } from "@/components/AddItemDialog";
 import { useToast } from "@/hooks/use-toast";
 
-const Index = () => {
+const Inventory = () => {
   const { toast } = useToast();
   const [items, setItems] = useState<InventoryItemType[]>([
     {
@@ -105,19 +105,14 @@ const Index = () => {
   ).length;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-[calc(100vh-4rem)] bg-background pb-20 md:pb-6">
       {/* Header */}
       <header className="sticky top-0 z-10 bg-card border-b shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center">
-                <Package className="h-6 w-6 text-primary-foreground" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-foreground">Inventory</h1>
-                <p className="text-sm text-muted-foreground">Stock Management</p>
-              </div>
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">Inventory</h1>
+              <p className="text-sm text-muted-foreground">Stock Management</p>
             </div>
             <AddItemDialog onAdd={handleAddItem} />
           </div>
@@ -203,4 +198,4 @@ const Index = () => {
   );
 };
 
-export default Index;
+export default Inventory;
