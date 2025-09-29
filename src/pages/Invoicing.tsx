@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { FileText, Plus, Eye, Trash2, DollarSign, Calendar } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useRef } from "react";
+import { FileText, Plus, Eye, Trash2, Calendar, Settings, Printer } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -21,7 +21,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { InvoiceTemplate, DEFAULT_TEMPLATE } from "@/types/invoice";
+import { InvoicePreview } from "@/components/InvoicePreview";
+import { TemplateEditor } from "@/components/TemplateEditor";
+import { useReactToPrint } from "react-to-print";
 
 interface InvoiceItem {
   name: string;
@@ -34,21 +39,31 @@ interface Invoice {
   invoiceNumber: string;
   customerName: string;
   customerEmail: string;
+  customerAddress?: string;
   date: string;
   dueDate: string;
   items: InvoiceItem[];
   status: "paid" | "pending" | "overdue";
   total: number;
+  notes?: string;
+  templateId: string;
 }
 
 const Invoicing = () => {
   const { toast } = useToast();
+  const printRef = useRef<HTMLDivElement>(null);
+  
+  const [templates, setTemplates] = useState<InvoiceTemplate[]>([DEFAULT_TEMPLATE]);
+  const [isTemplateEditorOpen, setIsTemplateEditorOpen] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<InvoiceTemplate>(DEFAULT_TEMPLATE);
+  
   const [invoices, setInvoices] = useState<Invoice[]>([
     {
       id: "1",
       invoiceNumber: "INV-001",
       customerName: "Acme Corporation",
       customerEmail: "billing@acme.com",
+      customerAddress: "456 Client Ave, Business City, BC 67890",
       date: "2025-01-15",
       dueDate: "2025-02-15",
       items: [
@@ -57,6 +72,8 @@ const Invoicing = () => {
       ],
       status: "pending",
       total: 4150,
+      notes: "Net 30 payment terms. Late fees apply after due date.",
+      templateId: "default",
     },
     {
       id: "2",
@@ -70,6 +87,7 @@ const Invoicing = () => {
       ],
       status: "paid",
       total: 1250,
+      templateId: "default",
     },
   ]);
 
@@ -78,7 +96,10 @@ const Invoicing = () => {
   const [formData, setFormData] = useState({
     customerName: "",
     customerEmail: "",
+    customerAddress: "",
     dueDate: "",
+    notes: "",
+    templateId: "default",
     itemName: "",
     itemQuantity: "1",
     itemPrice: "",
@@ -135,11 +156,14 @@ const Invoicing = () => {
       invoiceNumber: `INV-${String(invoices.length + 1).padStart(3, "0")}`,
       customerName: formData.customerName,
       customerEmail: formData.customerEmail,
+      customerAddress: formData.customerAddress || undefined,
       date: new Date().toISOString().split("T")[0],
       dueDate: formData.dueDate,
       items: invoiceItems,
       status: "pending",
       total: calculateTotal(),
+      notes: formData.notes || undefined,
+      templateId: formData.templateId,
     };
 
     setInvoices([newInvoice, ...invoices]);
@@ -151,7 +175,10 @@ const Invoicing = () => {
     setFormData({
       customerName: "",
       customerEmail: "",
+      customerAddress: "",
       dueDate: "",
+      notes: "",
+      templateId: "default",
       itemName: "",
       itemQuantity: "1",
       itemPrice: "",
@@ -171,14 +198,27 @@ const Invoicing = () => {
   };
 
   const handleDelete = (id: string) => {
-    const invoice = invoices.find(i => i.id === id);
-    setInvoices(invoices.filter(i => i.id !== id));
+    const invoice = invoices.find((i) => i.id === id);
+    setInvoices(invoices.filter((i) => i.id !== id));
     toast({
       title: "Invoice deleted",
       description: `Invoice ${invoice?.invoiceNumber} has been deleted.`,
       variant: "destructive",
     });
   };
+
+  const handleTemplateEdit = () => {
+    setEditingTemplate(templates[0]);
+    setIsTemplateEditorOpen(true);
+  };
+
+  const handleTemplateSave = (updatedTemplate: InvoiceTemplate) => {
+    setTemplates([updatedTemplate]);
+  };
+
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+  });
 
   const getStatusColor = (status: Invoice["status"]) => {
     switch (status) {
@@ -208,131 +248,158 @@ const Invoicing = () => {
             <h1 className="text-2xl font-bold text-foreground">Invoicing</h1>
             <p className="text-sm text-muted-foreground">{invoices.length} total invoices</p>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2" onClick={() => setInvoiceItems([])}>
-                <Plus className="h-5 w-5" />
-                New Invoice
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-              <form onSubmit={handleSubmit}>
-                <DialogHeader>
-                  <DialogTitle>Create New Invoice</DialogTitle>
-                  <DialogDescription>
-                    Add customer details and items to create an invoice
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="customerName">Customer Name *</Label>
-                    <Input
-                      id="customerName"
-                      value={formData.customerName}
-                      onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
-                      placeholder="Company or Person Name"
-                      required
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="customerEmail">Customer Email *</Label>
-                    <Input
-                      id="customerEmail"
-                      type="email"
-                      value={formData.customerEmail}
-                      onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value })}
-                      placeholder="customer@email.com"
-                      required
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="dueDate">Due Date *</Label>
-                    <Input
-                      id="dueDate"
-                      type="date"
-                      value={formData.dueDate}
-                      onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                      required
-                    />
-                  </div>
+          <div className="flex gap-2">
+            <Button variant="outline" className="gap-2" onClick={handleTemplateEdit}>
+              <Settings className="h-5 w-5" />
+              Template
+            </Button>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="gap-2" onClick={() => setInvoiceItems([])}>
+                  <Plus className="h-5 w-5" />
+                  New Invoice
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+                <form onSubmit={handleSubmit}>
+                  <DialogHeader>
+                    <DialogTitle>Create New Invoice</DialogTitle>
+                    <DialogDescription>
+                      Add customer details and items to create an invoice
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="customerName">Customer Name *</Label>
+                      <Input
+                        id="customerName"
+                        value={formData.customerName}
+                        onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
+                        placeholder="Company or Person Name"
+                        required
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="customerEmail">Customer Email *</Label>
+                      <Input
+                        id="customerEmail"
+                        type="email"
+                        value={formData.customerEmail}
+                        onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value })}
+                        placeholder="customer@email.com"
+                        required
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="customerAddress">Customer Address (Optional)</Label>
+                      <Textarea
+                        id="customerAddress"
+                        value={formData.customerAddress}
+                        onChange={(e) => setFormData({ ...formData, customerAddress: e.target.value })}
+                        placeholder="123 Client Street, City, State, ZIP"
+                        rows={2}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="dueDate">Due Date *</Label>
+                      <Input
+                        id="dueDate"
+                        type="date"
+                        value={formData.dueDate}
+                        onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                        required
+                      />
+                    </div>
 
-                  <div className="border-t pt-4">
-                    <h3 className="font-semibold mb-3">Invoice Items</h3>
-                    <div className="grid gap-3">
-                      <div className="grid grid-cols-[2fr_1fr_1fr_auto] gap-2 items-end">
-                        <div className="grid gap-2">
-                          <Label htmlFor="itemName">Item Name</Label>
-                          <Input
-                            id="itemName"
-                            value={formData.itemName}
-                            onChange={(e) => setFormData({ ...formData, itemName: e.target.value })}
-                            placeholder="Product or Service"
-                          />
-                        </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="itemQuantity">Qty</Label>
-                          <Input
-                            id="itemQuantity"
-                            type="number"
-                            min="1"
-                            value={formData.itemQuantity}
-                            onChange={(e) => setFormData({ ...formData, itemQuantity: e.target.value })}
-                          />
-                        </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="itemPrice">Price</Label>
-                          <Input
-                            id="itemPrice"
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            value={formData.itemPrice}
-                            onChange={(e) => setFormData({ ...formData, itemPrice: e.target.value })}
-                            placeholder="0.00"
-                          />
-                        </div>
-                        <Button type="button" onClick={handleAddItem} size="icon">
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="notes">Notes (Optional)</Label>
+                      <Textarea
+                        id="notes"
+                        value={formData.notes}
+                        onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                        placeholder="Payment terms, special instructions, etc."
+                        rows={2}
+                      />
+                    </div>
 
-                      {invoiceItems.length > 0 && (
-                        <div className="border rounded-lg p-3 space-y-2">
-                          {invoiceItems.map((item, index) => (
-                            <div key={index} className="flex items-center justify-between text-sm">
-                              <span className="flex-1">{item.name}</span>
-                              <span className="text-muted-foreground mx-2">×{item.quantity}</span>
-                              <span className="font-medium min-w-[80px] text-right">
-                                ${(item.quantity * item.price).toFixed(2)}
-                              </span>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 ml-2"
-                                onClick={() => handleRemoveItem(index)}
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                            </div>
-                          ))}
-                          <div className="border-t pt-2 flex justify-between font-semibold">
-                            <span>Total:</span>
-                            <span>${calculateTotal().toFixed(2)}</span>
+                    <div className="border-t pt-4">
+                      <h3 className="font-semibold mb-3">Invoice Items</h3>
+                      <div className="grid gap-3">
+                        <div className="grid grid-cols-[2fr_1fr_1fr_auto] gap-2 items-end">
+                          <div className="grid gap-2">
+                            <Label htmlFor="itemName">Item Name</Label>
+                            <Input
+                              id="itemName"
+                              value={formData.itemName}
+                              onChange={(e) => setFormData({ ...formData, itemName: e.target.value })}
+                              placeholder="Product or Service"
+                            />
                           </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="itemQuantity">Qty</Label>
+                            <Input
+                              id="itemQuantity"
+                              type="number"
+                              min="1"
+                              value={formData.itemQuantity}
+                              onChange={(e) => setFormData({ ...formData, itemQuantity: e.target.value })}
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="itemPrice">Price</Label>
+                            <Input
+                              id="itemPrice"
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={formData.itemPrice}
+                              onChange={(e) => setFormData({ ...formData, itemPrice: e.target.value })}
+                              placeholder="0.00"
+                            />
+                          </div>
+                          <Button type="button" onClick={handleAddItem} size="icon">
+                            <Plus className="h-4 w-4" />
+                          </Button>
                         </div>
-                      )}
+
+                        {invoiceItems.length > 0 && (
+                          <div className="border rounded-lg p-3 space-y-2">
+                            {invoiceItems.map((item, index) => (
+                              <div key={index} className="flex items-center justify-between text-sm">
+                                <span className="flex-1">{item.name}</span>
+                                <span className="text-muted-foreground mx-2">×{item.quantity}</span>
+                                <span className="font-medium min-w-[80px] text-right">
+                                  ${(item.quantity * item.price).toFixed(2)}
+                                </span>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 ml-2"
+                                  onClick={() => handleRemoveItem(index)}
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </div>
+                            ))}
+                            <div className="border-t pt-2 flex justify-between font-semibold">
+                              <span>Total:</span>
+                              <span>${calculateTotal().toFixed(2)}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-                <DialogFooter>
-                  <Button type="submit" disabled={invoiceItems.length === 0}>
-                    Create Invoice
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
+                  <DialogFooter>
+                    <Button type="submit" disabled={invoiceItems.length === 0}>
+                      Create Invoice
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         {/* Stats Cards */}
@@ -444,54 +511,42 @@ const Invoicing = () => {
 
         {/* View Invoice Dialog */}
         <Dialog open={!!viewingInvoice} onOpenChange={() => setViewingInvoice(null)}>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
             {viewingInvoice && (
               <>
                 <DialogHeader>
-                  <DialogTitle>Invoice Details</DialogTitle>
-                  <DialogDescription>{viewingInvoice.invoiceNumber}</DialogDescription>
+                  <DialogTitle className="flex items-center justify-between">
+                    <span>Invoice Preview</span>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handlePrint()}
+                      >
+                        <Printer className="h-4 w-4 mr-2" />
+                        Print
+                      </Button>
+                    </div>
+                  </DialogTitle>
                 </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-semibold mb-1">Customer</h3>
-                    <p className="text-sm">{viewingInvoice.customerName}</p>
-                    <p className="text-sm text-muted-foreground">{viewingInvoice.customerEmail}</p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <h3 className="font-semibold mb-1 text-sm">Date</h3>
-                      <p className="text-sm">{viewingInvoice.date}</p>
-                    </div>
-                    <div>
-                      <h3 className="font-semibold mb-1 text-sm">Due Date</h3>
-                      <p className="text-sm">{viewingInvoice.dueDate}</p>
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold mb-2">Items</h3>
-                    <div className="border rounded-lg p-3 space-y-2">
-                      {viewingInvoice.items.map((item, idx) => (
-                        <div key={idx} className="flex justify-between text-sm">
-                          <span>{item.name}</span>
-                          <span className="text-muted-foreground">
-                            {item.quantity} × ${item.price.toFixed(2)}
-                          </span>
-                          <span className="font-medium">
-                            ${(item.quantity * item.price).toFixed(2)}
-                          </span>
-                        </div>
-                      ))}
-                      <div className="border-t pt-2 flex justify-between font-semibold">
-                        <span>Total</span>
-                        <span>${viewingInvoice.total.toFixed(2)}</span>
-                      </div>
-                    </div>
-                  </div>
+                <div ref={printRef} className="bg-gray-50 p-4 rounded-lg">
+                  <InvoicePreview
+                    invoice={viewingInvoice}
+                    template={templates.find(t => t.id === viewingInvoice.templateId) || templates[0]}
+                  />
                 </div>
               </>
             )}
           </DialogContent>
         </Dialog>
+
+        {/* Template Editor */}
+        <TemplateEditor
+          template={editingTemplate}
+          open={isTemplateEditorOpen}
+          onOpenChange={setIsTemplateEditorOpen}
+          onSave={handleTemplateSave}
+        />
       </div>
     </div>
   );
