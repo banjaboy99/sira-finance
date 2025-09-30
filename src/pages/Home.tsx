@@ -118,7 +118,7 @@ const Home = () => {
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link to="/settings" className="flex items-center cursor-pointer">
+                <Link to="/profile" className="flex items-center cursor-pointer">
                   <User className="mr-2 h-4 w-4" />
                   <span>Profile</span>
                 </Link>
@@ -129,6 +129,7 @@ const Home = () => {
                   <span>Finances</span>
                 </Link>
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
                 <Link to="/settings" className="flex items-center cursor-pointer">
                   <SettingsIcon className="mr-2 h-4 w-4" />
