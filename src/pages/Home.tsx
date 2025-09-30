@@ -38,7 +38,7 @@ const Home = () => {
       description: "Track stock levels and manage items",
       icon: Package,
       path: "/inventory",
-      color: "from-primary/20 to-primary/10",
+      color: "from-primary/30 to-primary/10",
       iconColor: "text-primary",
     },
     {
@@ -46,16 +46,16 @@ const Home = () => {
       description: "Create professional invoices",
       icon: FileText,
       path: "/invoicing",
-      color: "from-accent/20 to-accent/10",
-      iconColor: "text-accent",
+      color: "from-secondary/30 to-secondary/10",
+      iconColor: "text-secondary",
     },
     {
       title: "Suppliers",
       description: "Manage your supplier contacts",
       icon: Users,
       path: "/suppliers",
-      color: "from-secondary/20 to-secondary/10",
-      iconColor: "text-secondary",
+      color: "from-accent/30 to-accent/10",
+      iconColor: "text-accent",
     },
   ];
 
