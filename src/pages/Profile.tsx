@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { User, Mail, Building, MapPin, Phone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { LocationAutocomplete } from "@/components/LocationAutocomplete";
 
 const Profile = () => {
   const { toast } = useToast();
@@ -150,11 +151,11 @@ const Profile = () => {
                   <MapPin className="h-4 w-4 inline mr-1" />
                   Location
                 </Label>
-                <Input
+                <LocationAutocomplete
                   id="location"
                   value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  placeholder="City, State"
+                  onChange={setLocation}
+                  placeholder="Start typing your city..."
                 />
               </div>
             </CardContent>

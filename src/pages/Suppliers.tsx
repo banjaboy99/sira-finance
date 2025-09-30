@@ -16,6 +16,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { LocationAutocomplete } from "@/components/LocationAutocomplete";
 
 interface Supplier {
   id: string;
@@ -234,12 +235,11 @@ const Suppliers = () => {
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="address">Address (Optional)</Label>
-                    <Textarea
+                    <LocationAutocomplete
                       id="address"
                       value={formData.address}
-                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                      placeholder="123 Business Street, City, State, ZIP"
-                      rows={2}
+                      onChange={(value) => setFormData({ ...formData, address: value })}
+                      placeholder="Start typing an address..."
                     />
                   </div>
                   <div className="grid gap-2">
