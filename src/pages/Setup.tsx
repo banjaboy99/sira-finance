@@ -29,14 +29,54 @@ const Setup = () => {
     { value: "other", label: "Other Business", icon: Truck, description: "Food truck, services, etc." },
   ];
 
-  const painPointOptions = [
-    "Track where my money goes",
-    "Remember special customer orders",
-    "Manage suppliers easily",
-    "Create professional invoices",
-    "Monitor inventory levels",
-    "Budget and plan expenses",
-  ];
+  const getPainPointOptions = () => {
+    switch (businessType) {
+      case "trader":
+        return [
+          "Track where my money goes",
+          "Monitor inventory levels",
+          "Manage suppliers easily",
+          "Remember special customer orders",
+          "Create professional invoices",
+          "Budget and plan expenses",
+        ];
+      case "store":
+        return [
+          "Monitor inventory levels",
+          "Track where my money goes",
+          "Manage suppliers easily",
+          "Create professional invoices",
+          "Budget and plan expenses",
+          "Track low stock items",
+        ];
+      case "freelancer":
+        return [
+          "Create professional invoices",
+          "Track client payments",
+          "Manage project deadlines",
+          "Track where my money goes",
+          "Budget and plan expenses",
+          "Organize client information",
+        ];
+      case "other":
+        return [
+          "Track where my money goes",
+          "Create professional invoices",
+          "Budget and plan expenses",
+          "Manage suppliers easily",
+          "Monitor inventory levels",
+          "Remember special customer orders",
+        ];
+      default:
+        return [
+          "Track where my money goes",
+          "Create professional invoices",
+          "Budget and plan expenses",
+        ];
+    }
+  };
+
+  const painPointOptions = getPainPointOptions();
 
   const handlePainPointToggle = (point: string) => {
     setPainPoints((prev) =>
