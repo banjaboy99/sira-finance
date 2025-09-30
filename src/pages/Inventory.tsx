@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { Search, Package } from "lucide-react";
+import { Search, Package, Info, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -14,30 +16,31 @@ import { useToast } from "@/hooks/use-toast";
 
 const Inventory = () => {
   const { toast } = useToast();
+  const [showHelp, setShowHelp] = useState(true);
   const [items, setItems] = useState<InventoryItemType[]>([
     {
-      id: "1",
-      name: "Laptop Computer",
-      sku: "TECH-001",
-      quantity: 15,
-      category: "Electronics",
-      minStock: 5,
-    },
-    {
-      id: "2",
-      name: "Office Chair",
-      sku: "FURN-045",
-      quantity: 8,
-      category: "Furniture",
-      minStock: 3,
-    },
-    {
-      id: "3",
-      name: "Printer Paper",
-      sku: "SUPP-120",
-      quantity: 2,
-      category: "Supplies",
+      id: "demo-1",
+      name: "Sample Product (Click to Edit)",
+      sku: "DEMO-001",
+      quantity: 25,
+      category: "Tutorial",
       minStock: 10,
+    },
+    {
+      id: "demo-2",
+      name: "Low Stock Example",
+      sku: "DEMO-002",
+      quantity: 3,
+      category: "Tutorial",
+      minStock: 10,
+    },
+    {
+      id: "demo-3",
+      name: "Out of Stock Demo",
+      sku: "DEMO-003",
+      quantity: 0,
+      category: "Tutorial",
+      minStock: 5,
     },
   ]);
   
@@ -158,6 +161,27 @@ const Inventory = () => {
 
       {/* Inventory List */}
       <main className="container mx-auto px-4 py-6">
+        {/* Help Banner */}
+        {showHelp && (
+          <Alert className="mb-6 bg-primary/5 border-primary/20">
+            <Info className="h-4 w-4 text-primary" />
+            <AlertDescription className="flex items-start justify-between gap-2">
+              <div className="flex-1">
+                <strong className="block mb-1">Tutorial Mode</strong>
+                These are example items to show you how inventory tracking works. Click any item to edit, use +/- buttons to adjust quantities, or delete them to start fresh with your own products.
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 -mt-1"
+                onClick={() => setShowHelp(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+        
         {filteredItems.length === 0 ? (
           <div className="text-center py-12">
             <Package className="h-16 w-16 text-muted-foreground mx-auto mb-4" />

@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
-import { FileText, Plus, Eye, Trash2, Calendar, Settings, Receipt as ReceiptIcon } from "lucide-react";
+import { FileText, Plus, Eye, Trash2, Calendar, Settings, Receipt as ReceiptIcon, Info, X } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -53,6 +54,7 @@ const Invoicing = () => {
   const { toast } = useToast();
   const invoiceRef = useRef<HTMLDivElement>(null);
   const receiptRef = useRef<HTMLDivElement>(null);
+  const [showHelp, setShowHelp] = useState(true);
   
   const [templates, setTemplates] = useState<InvoiceTemplate[]>([DEFAULT_TEMPLATE]);
   const [isTemplateEditorOpen, setIsTemplateEditorOpen] = useState(false);
@@ -62,52 +64,52 @@ const Invoicing = () => {
   
   const [invoices, setInvoices] = useState<Invoice[]>([
     {
-      id: "1",
+      id: "demo-1",
       invoiceNumber: "INV-001",
-      customerName: "Acme Corporation",
-      customerEmail: "billing@acme.com",
-      customerAddress: "456 Client Ave, Business City, BC 67890",
-      date: "2025-01-15",
-      dueDate: "2025-02-15",
+      customerName: "Example Customer (Click to view)",
+      customerEmail: "customer@example.com",
+      customerAddress: "123 Example Street, Demo City",
+      date: new Date().toISOString().split("T")[0],
+      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
       items: [
-        { name: "Laptop Computer", quantity: 2, price: 1200 },
-        { name: "Office Chair", quantity: 5, price: 350 },
+        { name: "Product A", quantity: 2, price: 50 },
+        { name: "Service B", quantity: 1, price: 100 },
       ],
       status: "pending",
-      total: 4150,
-      notes: "Net 30 payment terms. Late fees apply after due date.",
+      total: 200,
+      notes: "This is an example invoice. Create your own by clicking 'New Invoice' button.",
       templateId: "default",
     },
     {
-      id: "2",
+      id: "demo-2",
       invoiceNumber: "INV-002",
-      customerName: "Tech Startup Inc.",
-      customerEmail: "accounts@techstartup.com",
-      date: "2025-01-10",
-      dueDate: "2025-01-25",
+      customerName: "Paid Invoice Example",
+      customerEmail: "paid@example.com",
+      date: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+      dueDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
       items: [
-        { name: "Printer Paper", quantity: 50, price: 25 },
+        { name: "Item X", quantity: 3, price: 25 },
       ],
       status: "paid",
-      total: 1250,
+      total: 75,
+      notes: "This shows how a paid invoice looks. You can mark invoices as paid after receiving payment.",
       templateId: "default",
     },
   ]);
 
-  // Receipts state
   const [receipts, setReceipts] = useState<Receipt[]>([
     {
-      id: "1",
+      id: "demo-rec-1",
       receiptNumber: "REC-001",
-      customerName: "John Doe",
-      date: "2025-01-15",
+      customerName: "Walk-in Customer",
+      date: new Date().toISOString().split("T")[0],
       items: [
-        { name: "Laptop Computer", quantity: 1, price: 1200 },
-        { name: "Mouse", quantity: 2, price: 25 },
+        { name: "Product A", quantity: 1, price: 50 },
+        { name: "Product B", quantity: 2, price: 25 },
       ],
-      total: 1250,
-      paymentMethod: "card",
-      notes: "Thank you for your purchase!",
+      total: 100,
+      paymentMethod: "cash",
+      notes: "This is an example receipt. Create your own by clicking 'New Receipt' button.",
       templateId: "default",
     },
   ]);
@@ -728,6 +730,30 @@ const Invoicing = () => {
               </CardContent>
             </Card>
           </div>
+        )}
+
+
+        {/* Help Banner */}
+        {showHelp && (
+          <Alert className="mb-6 bg-primary/5 border-primary/20">
+            <Info className="h-4 w-4 text-primary" />
+            <AlertDescription className="flex items-start justify-between gap-2">
+              <div className="flex-1">
+                <strong className="block mb-1">Tutorial Mode</strong>
+                {activeTab === "invoices" 
+                  ? "These are example invoices to show you how invoicing works. Click 'New Invoice' to create your own, click an invoice to view details, or delete these examples to start fresh."
+                  : "These are example receipts to show you how receipt generation works. Click 'New Receipt' to create your own for immediate sales transactions."}
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 -mt-1"
+                onClick={() => setShowHelp(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </AlertDescription>
+          </Alert>
         )}
 
         {/* Content based on active tab */}

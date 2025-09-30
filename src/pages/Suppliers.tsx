@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Phone, MessageCircle, Mail, Plus, Edit, Trash2, Building } from "lucide-react";
+import { Phone, MessageCircle, Mail, Plus, Edit, Trash2, Building, Info, X } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -31,25 +32,17 @@ interface Supplier {
 
 const Suppliers = () => {
   const { toast } = useToast();
+  const [showHelp, setShowHelp] = useState(true);
   const [suppliers, setSuppliers] = useState<Supplier[]>([
     {
-      id: "1",
-      name: "John Smith",
-      company: "Tech Supplies Co.",
+      id: "demo-1",
+      name: "Example Supplier Contact",
+      company: "Demo Supplies Co.",
       phone: "+1234567890",
-      email: "john@techsupplies.com",
-      products: ["Laptop Computer", "Printer Paper"],
-      address: "123 Business St, City, State 12345",
-      notes: "Preferred supplier for electronics",
-    },
-    {
-      id: "2",
-      name: "Sarah Johnson",
-      company: "Office Furniture Plus",
-      phone: "+1987654321",
-      email: "sarah@officefurniture.com",
-      products: ["Office Chair"],
-      address: "456 Commerce Ave, City, State 67890",
+      email: "contact@demosupplies.com",
+      products: ["Product A", "Product B", "Product C"],
+      address: "123 Example Street, Demo City, DC 12345",
+      notes: "This is an example supplier. Click edit to see all fields, or delete to start fresh with your real suppliers.",
     },
   ]);
 
@@ -260,6 +253,28 @@ const Suppliers = () => {
             </DialogContent>
           </Dialog>
         </div>
+
+
+        {/* Help Banner */}
+        {showHelp && suppliers.length > 0 && (
+          <Alert className="mb-6 bg-primary/5 border-primary/20">
+            <Info className="h-4 w-4 text-primary" />
+            <AlertDescription className="flex items-start justify-between gap-2">
+              <div className="flex-1">
+                <strong className="block mb-1">Tutorial Mode</strong>
+                This is an example supplier contact to show you how supplier management works. You can call, WhatsApp, or email directly from here. Click 'Add Supplier' to add your real contacts.
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 -mt-1"
+                onClick={() => setShowHelp(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Suppliers List */}
         {suppliers.length === 0 ? (
