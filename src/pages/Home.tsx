@@ -1,9 +1,10 @@
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { Package, FileText, Users, ArrowRight, TrendingUp, AlertCircle, DollarSign, ShoppingCart, Menu, User, Settings as SettingsIcon, PieChart } from "lucide-react";
+import { Package, FileText, Users, ArrowRight, TrendingUp, AlertCircle, DollarSign, ShoppingCart, Menu, User, Settings as SettingsIcon, PieChart, LogOut } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AdBanner } from "@/components/AdBanner";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const Home = () => {
+  const { user, signOut } = useAuth();
   const [greeting, setGreeting] = useState("Welcome");
   const [businessName, setBusinessName] = useState("");
 
@@ -115,7 +117,14 @@ const Home = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 bg-card z-50">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuLabel>
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium">My Account</p>
+                  {user?.email && (
+                    <p className="text-xs text-muted-foreground">{user.email}</p>
+                  )}
+                </div>
+              </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
                 <Link to="/profile" className="flex items-center cursor-pointer">
@@ -135,6 +144,14 @@ const Home = () => {
                   <SettingsIcon className="mr-2 h-4 w-4" />
                   <span>Settings</span>
                 </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                onClick={signOut}
+                className="text-destructive focus:text-destructive cursor-pointer"
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Sign Out</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

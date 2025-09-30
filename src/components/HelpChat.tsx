@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { MessageCircle, X, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Message {
   role: "user" | "assistant";
@@ -14,6 +15,7 @@ interface Message {
 export const HelpChat = () => {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
@@ -35,37 +37,34 @@ export const HelpChat = () => {
     const userMessage: Message = { role: "user", content: input };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
+    setIsLoading(true);
 
-    // TODO: Connect to AI when Cloud is enabled
-    setTimeout(() => {
+    try {
+      const { data, error } = await supabase.functions.invoke('chat', {
+        body: { message: input },
+      });
+
+      if (error) {
+        throw error;
+      }
+
       const assistantMessage: Message = {
         role: "assistant",
-        content: getResponse(input),
+        content: data.reply || "Sorry, I couldn't generate a response.",
       };
       setMessages((prev) => [...prev, assistantMessage]);
-    }, 500);
-  };
-
-  const getResponse = (question: string): string => {
-    const q = question.toLowerCase();
-    
-    if (q.includes("inventory") || q.includes("stock")) {
-      return "To add inventory items:\n1. Go to the Inventory page\n2. Click 'Add Item'\n3. Fill in item details (name, quantity, price)\n4. Click Save\n\nYou'll get alerts when stock runs low!";
+    } catch (error) {
+      console.error('Chat error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to get response. Please try again.",
+        variant: "destructive",
+      });
+      // Remove the user message if request failed
+      setMessages((prev) => prev.filter((m) => m !== userMessage));
+    } finally {
+      setIsLoading(false);
     }
-    
-    if (q.includes("invoice")) {
-      return "To create an invoice:\n1. Navigate to Invoicing page\n2. Click 'Create Invoice'\n3. Add customer details\n4. Add items from your inventory\n5. Preview and download as PDF\n\nYour invoices look professional!";
-    }
-    
-    if (q.includes("special") || q.includes("order")) {
-      return "Special orders help you track customer requests!\n1. Go to Inventory\n2. Click 'Special Orders' tab\n3. Add customer name and item details\n4. Set delivery date\n\nYou'll get reminders when orders are due!";
-    }
-    
-    if (q.includes("budget")) {
-      return "Budget management is in the Finances page:\n1. Go to Finances\n2. Click 'Add Budget'\n3. Set category (rent, stock, etc.)\n4. Enter amount\n\nTrack spending vs budget in the Analysis tab!";
-    }
-    
-    return "I can help you with:\n• Adding inventory items\n• Creating invoices\n• Tracking special orders\n• Managing budgets\n• Supplier contacts\n\nWhat would you like to do?";
   };
 
   const handleQuickQuestion = (question: string) => {
@@ -135,9 +134,10 @@ export const HelpChat = () => {
             placeholder="Ask a question..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && handleSend()}
+            onKeyPress={(e) => e.key === "Enter" && !isLoading && handleSend()}
+            disabled={isLoading}
           />
-          <Button onClick={handleSend} size="icon">
+          <Button onClick={handleSend} size="icon" disabled={isLoading}>
             <Send className="h-4 w-4" />
           </Button>
         </div>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,11 +7,21 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Package, Mail, Lock, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { signIn, signUp, user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      const hasCompletedSetup = localStorage.getItem("setupCompleted");
+      navigate(hasCompletedSetup ? "/" : "/setup");
+    }
+  }, [user, navigate]);
 
   // Login state
   const [loginEmail, setLoginEmail] = useState("");
@@ -26,36 +36,50 @@ const Auth = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    // TODO: Connect to Lovable Cloud auth when enabled
-    setTimeout(() => {
+    const { error } = await signIn(loginEmail, loginPassword);
+    
+    if (error) {
       toast({
-        title: "Welcome back!",
-        description: "Login successful",
+        title: "Login failed",
+        description: error.message,
+        variant: "destructive",
       });
-      // Skip setup if already completed
-      const hasCompletedSetup = localStorage.getItem("setupCompleted");
-      if (hasCompletedSetup) {
-        navigate("/");
-      } else {
-        navigate("/setup");
-      }
       setIsLoading(false);
-    }, 1000);
+      return;
+    }
+
+    toast({
+      title: "Welcome back!",
+      description: "Login successful",
+    });
+    
+    const hasCompletedSetup = localStorage.getItem("setupCompleted");
+    navigate(hasCompletedSetup ? "/" : "/setup");
+    setIsLoading(false);
   };
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // TODO: Connect to Lovable Cloud auth when enabled
-    setTimeout(() => {
+    const { error } = await signUp(signupEmail, signupPassword, signupName);
+    
+    if (error) {
       toast({
-        title: "Account created!",
-        description: "Let's set up your business",
+        title: "Signup failed",
+        description: error.message,
+        variant: "destructive",
       });
-      navigate("/setup");
       setIsLoading(false);
-    }, 1000);
+      return;
+    }
+
+    toast({
+      title: "Account created!",
+      description: "Please complete your business setup",
+    });
+    navigate("/setup");
+    setIsLoading(false);
   };
 
   const handleGoogleAuth = () => {
