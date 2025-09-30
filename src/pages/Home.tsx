@@ -1,9 +1,17 @@
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { Package, FileText, Users, ArrowRight, TrendingUp, AlertCircle, DollarSign, ShoppingCart } from "lucide-react";
+import { Package, FileText, Users, ArrowRight, TrendingUp, AlertCircle, DollarSign, ShoppingCart, Menu, User, Settings as SettingsIcon, PieChart } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AdBanner } from "@/components/AdBanner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Home = () => {
   const [greeting, setGreeting] = useState("Welcome");
@@ -85,17 +93,50 @@ const Home = () => {
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-background pb-20 md:pb-6">
       <div className="container mx-auto px-4 py-6 md:py-8 max-w-6xl">
-        {/* Greeting Header */}
-        <div className="mb-8 animate-fade-in">
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
-            {greeting}
-            {businessName && (
-              <span className="block md:inline md:ml-2 text-primary">
-                {businessName}
-              </span>
-            )}
-          </h1>
-          <p className="text-muted-foreground">Here's what's happening with your business today</p>
+        {/* Header with Menu */}
+        <div className="flex items-start justify-between mb-8 animate-fade-in">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
+              {greeting}
+              {businessName && (
+                <span className="block md:inline md:ml-2 text-primary">
+                  {businessName}
+                </span>
+              )}
+            </h1>
+            <p className="text-muted-foreground">Here's what's happening with your business today</p>
+          </div>
+
+          {/* Menu Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon" className="h-10 w-10 rounded-full">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 bg-card z-50">
+              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link to="/settings" className="flex items-center cursor-pointer">
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Profile</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/finances" className="flex items-center cursor-pointer">
+                  <PieChart className="mr-2 h-4 w-4" />
+                  <span>Finances</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/settings" className="flex items-center cursor-pointer">
+                  <SettingsIcon className="mr-2 h-4 w-4" />
+                  <span>Settings</span>
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* Ad Banner */}
