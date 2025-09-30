@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { FileText, Plus, Eye, Trash2, Calendar, Settings, Printer } from "lucide-react";
+import { FileText, Plus, Eye, Trash2, Calendar, Settings, Receipt as ReceiptIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,10 +23,11 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { InvoiceTemplate, DEFAULT_TEMPLATE } from "@/types/invoice";
+import { InvoiceTemplate, DEFAULT_TEMPLATE, Receipt } from "@/types/invoice";
 import { InvoicePreview } from "@/components/InvoicePreview";
+import { ReceiptPreview } from "@/components/ReceiptPreview";
 import { TemplateEditor } from "@/components/TemplateEditor";
-import { useReactToPrint } from "react-to-print";
+import { ExportMenu } from "@/components/ExportMenu";
 
 interface InvoiceItem {
   name: string;
@@ -51,11 +52,14 @@ interface Invoice {
 
 const Invoicing = () => {
   const { toast } = useToast();
-  const printRef = useRef<HTMLDivElement>(null);
+  const invoiceRef = useRef<HTMLDivElement>(null);
+  const receiptRef = useRef<HTMLDivElement>(null);
   
   const [templates, setTemplates] = useState<InvoiceTemplate[]>([DEFAULT_TEMPLATE]);
   const [isTemplateEditorOpen, setIsTemplateEditorOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<InvoiceTemplate>(DEFAULT_TEMPLATE);
+  
+  const [activeTab, setActiveTab] = useState<"invoices" | "receipts">("invoices");
   
   const [invoices, setInvoices] = useState<Invoice[]>([
     {
@@ -91,8 +95,29 @@ const Invoicing = () => {
     },
   ]);
 
+  // Receipts state
+  const [receipts, setReceipts] = useState<Receipt[]>([
+    {
+      id: "1",
+      receiptNumber: "REC-001",
+      customerName: "John Doe",
+      date: "2025-01-15",
+      items: [
+        { name: "Laptop Computer", quantity: 1, price: 1200 },
+        { name: "Mouse", quantity: 2, price: 25 },
+      ],
+      total: 1250,
+      paymentMethod: "card",
+      notes: "Thank you for your purchase!",
+      templateId: "default",
+    },
+  ]);
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isReceiptDialogOpen, setIsReceiptDialogOpen] = useState(false);
   const [viewingInvoice, setViewingInvoice] = useState<Invoice | null>(null);
+  const [viewingReceipt, setViewingReceipt] = useState<Receipt | null>(null);
+  
   const [formData, setFormData] = useState({
     customerName: "",
     customerEmail: "",
@@ -104,7 +129,18 @@ const Invoicing = () => {
     itemQuantity: "1",
     itemPrice: "",
   });
+  
+  const [receiptFormData, setReceiptFormData] = useState({
+    customerName: "",
+    paymentMethod: "cash" as "cash" | "card" | "transfer",
+    notes: "",
+    itemName: "",
+    itemQuantity: "1",
+    itemPrice: "",
+  });
+  
   const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([]);
+  const [receiptItems, setReceiptItems] = useState<InvoiceItem[]>([]);
 
   const handleAddItem = () => {
     if (!formData.itemName || !formData.itemPrice) {
@@ -216,9 +252,91 @@ const Invoicing = () => {
     setTemplates([updatedTemplate]);
   };
 
-  const handlePrint = useReactToPrint({
-    contentRef: printRef,
-  });
+  // Receipt handlers
+  const handleAddReceiptItem = () => {
+    if (!receiptFormData.itemName || !receiptFormData.itemPrice) {
+      toast({
+        title: "Missing information",
+        description: "Please fill in item name and price",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const newItem: InvoiceItem = {
+      name: receiptFormData.itemName,
+      quantity: parseInt(receiptFormData.itemQuantity) || 1,
+      price: parseFloat(receiptFormData.itemPrice),
+    };
+
+    setReceiptItems([...receiptItems, newItem]);
+    setReceiptFormData({
+      ...receiptFormData,
+      itemName: "",
+      itemQuantity: "1",
+      itemPrice: "",
+    });
+  };
+
+  const handleRemoveReceiptItem = (index: number) => {
+    setReceiptItems(receiptItems.filter((_, i) => i !== index));
+  };
+
+  const calculateReceiptTotal = () => {
+    return receiptItems.reduce((sum, item) => sum + (item.quantity * item.price), 0);
+  };
+
+  const handleReceiptSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (receiptItems.length === 0) {
+      toast({
+        title: "No items",
+        description: "Please add at least one item to the receipt",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const newReceipt: Receipt = {
+      id: Date.now().toString(),
+      receiptNumber: `REC-${String(receipts.length + 1).padStart(3, "0")}`,
+      customerName: receiptFormData.customerName,
+      date: new Date().toISOString().split("T")[0],
+      items: receiptItems,
+      total: calculateReceiptTotal(),
+      paymentMethod: receiptFormData.paymentMethod,
+      notes: receiptFormData.notes || undefined,
+      templateId: "default",
+    };
+
+    setReceipts([newReceipt, ...receipts]);
+    toast({
+      title: "Receipt created",
+      description: `Receipt ${newReceipt.receiptNumber} has been created.`,
+    });
+
+    setReceiptFormData({
+      customerName: "",
+      paymentMethod: "cash",
+      notes: "",
+      itemName: "",
+      itemQuantity: "1",
+      itemPrice: "",
+    });
+    setReceiptItems([]);
+    setIsReceiptDialogOpen(false);
+  };
+
+  const handleDeleteReceipt = (id: string) => {
+    const receipt = receipts.find((r) => r.id === id);
+    setReceipts(receipts.filter((r) => r.id !== id));
+    toast({
+      title: "Receipt deleted",
+      description: `Receipt ${receipt?.receiptNumber} has been deleted.`,
+      variant: "destructive",
+    });
+  };
 
   const getStatusColor = (status: Invoice["status"]) => {
     switch (status) {
@@ -233,10 +351,15 @@ const Invoicing = () => {
     }
   };
 
-  const stats = {
+  const invoiceStats = {
     total: invoices.reduce((sum, inv) => sum + inv.total, 0),
     paid: invoices.filter(inv => inv.status === "paid").reduce((sum, inv) => sum + inv.total, 0),
     pending: invoices.filter(inv => inv.status === "pending").reduce((sum, inv) => sum + inv.total, 0),
+  };
+
+  const receiptStats = {
+    total: receipts.reduce((sum, rec) => sum + rec.total, 0),
+    count: receipts.length,
   };
 
   return (
@@ -245,14 +368,147 @@ const Invoicing = () => {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Invoicing</h1>
-            <p className="text-sm text-muted-foreground">{invoices.length} total invoices</p>
+            <h1 className="text-2xl font-bold text-foreground">Invoicing & Receipts</h1>
+            <p className="text-sm text-muted-foreground">
+              {invoices.length} invoices · {receipts.length} receipts
+            </p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" className="gap-2" onClick={handleTemplateEdit}>
               <Settings className="h-5 w-5" />
               Template
             </Button>
+            <Dialog open={isReceiptDialogOpen} onOpenChange={setIsReceiptDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="gap-2" onClick={() => setReceiptItems([])}>
+                  <ReceiptIcon className="h-5 w-5" />
+                  New Receipt
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+                <form onSubmit={handleReceiptSubmit}>
+                  <DialogHeader>
+                    <DialogTitle>Create New Receipt</DialogTitle>
+                    <DialogDescription>
+                      Add customer details and items to create a receipt
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="receiptCustomerName">Customer Name (Optional)</Label>
+                      <Input
+                        id="receiptCustomerName"
+                        value={receiptFormData.customerName}
+                        onChange={(e) => setReceiptFormData({ ...receiptFormData, customerName: e.target.value })}
+                        placeholder="Customer Name"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="paymentMethod">Payment Method</Label>
+                      <Select
+                        value={receiptFormData.paymentMethod}
+                        onValueChange={(value: "cash" | "card" | "transfer") => 
+                          setReceiptFormData({ ...receiptFormData, paymentMethod: value })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="cash">Cash</SelectItem>
+                          <SelectItem value="card">Card</SelectItem>
+                          <SelectItem value="transfer">Transfer</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="receiptNotes">Notes (Optional)</Label>
+                      <Textarea
+                        id="receiptNotes"
+                        value={receiptFormData.notes}
+                        onChange={(e) => setReceiptFormData({ ...receiptFormData, notes: e.target.value })}
+                        placeholder="Thank you message, etc."
+                        rows={2}
+                      />
+                    </div>
+
+                    <div className="border-t pt-4">
+                      <h3 className="font-semibold mb-3">Receipt Items</h3>
+                      <div className="grid gap-3">
+                        <div className="grid grid-cols-[2fr_1fr_1fr_auto] gap-2 items-end">
+                          <div className="grid gap-2">
+                            <Label htmlFor="receiptItemName">Item Name</Label>
+                            <Input
+                              id="receiptItemName"
+                              value={receiptFormData.itemName}
+                              onChange={(e) => setReceiptFormData({ ...receiptFormData, itemName: e.target.value })}
+                              placeholder="Product or Service"
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="receiptItemQuantity">Qty</Label>
+                            <Input
+                              id="receiptItemQuantity"
+                              type="number"
+                              min="1"
+                              value={receiptFormData.itemQuantity}
+                              onChange={(e) => setReceiptFormData({ ...receiptFormData, itemQuantity: e.target.value })}
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="receiptItemPrice">Price</Label>
+                            <Input
+                              id="receiptItemPrice"
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={receiptFormData.itemPrice}
+                              onChange={(e) => setReceiptFormData({ ...receiptFormData, itemPrice: e.target.value })}
+                              placeholder="0.00"
+                            />
+                          </div>
+                          <Button type="button" onClick={handleAddReceiptItem} size="icon">
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+
+                        {receiptItems.length > 0 && (
+                          <div className="border rounded-lg p-3 space-y-2">
+                            {receiptItems.map((item, index) => (
+                              <div key={index} className="flex items-center justify-between text-sm">
+                                <span className="flex-1">{item.name}</span>
+                                <span className="text-muted-foreground mx-2">×{item.quantity}</span>
+                                <span className="font-medium min-w-[80px] text-right">
+                                  ${(item.quantity * item.price).toFixed(2)}
+                                </span>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 ml-2"
+                                  onClick={() => handleRemoveReceiptItem(index)}
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </div>
+                            ))}
+                            <div className="border-t pt-2 flex justify-between font-semibold">
+                              <span>Total:</span>
+                              <span>${calculateReceiptTotal().toFixed(2)}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button type="submit" disabled={receiptItems.length === 0}>
+                      Create Receipt
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="gap-2" onClick={() => setInvoiceItems([])}>
@@ -402,42 +658,88 @@ const Invoicing = () => {
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <p className="text-xs text-muted-foreground mb-1">Total</p>
-                <p className="text-lg font-bold text-foreground">${stats.total.toFixed(2)}</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <p className="text-xs text-muted-foreground mb-1">Paid</p>
-                <p className="text-lg font-bold text-success">${stats.paid.toFixed(2)}</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <p className="text-xs text-muted-foreground mb-1">Pending</p>
-                <p className="text-lg font-bold text-warning">${stats.pending.toFixed(2)}</p>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Tabs */}
+        <div className="flex gap-2 mb-6 border-b">
+          <button
+            className={`px-4 py-2 font-medium transition-colors ${
+              activeTab === "invoices"
+                ? "text-primary border-b-2 border-primary"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+            onClick={() => setActiveTab("invoices")}
+          >
+            Invoices ({invoices.length})
+          </button>
+          <button
+            className={`px-4 py-2 font-medium transition-colors ${
+              activeTab === "receipts"
+                ? "text-primary border-b-2 border-primary"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+            onClick={() => setActiveTab("receipts")}
+          >
+            Receipts ({receipts.length})
+          </button>
         </div>
 
-        {/* Invoices List */}
-        {invoices.length === 0 ? (
-          <div className="text-center py-12">
-            <FileText className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-foreground mb-2">No invoices yet</h3>
-            <p className="text-muted-foreground mb-4">Create your first invoice to get started</p>
+        {/* Stats Cards */}
+        {activeTab === "invoices" ? (
+          <div className="grid grid-cols-3 gap-3 mb-6">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground mb-1">Total</p>
+                  <p className="text-lg font-bold text-foreground">${invoiceStats.total.toFixed(2)}</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground mb-1">Paid</p>
+                  <p className="text-lg font-bold text-success">${invoiceStats.paid.toFixed(2)}</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground mb-1">Pending</p>
+                  <p className="text-lg font-bold text-warning">${invoiceStats.pending.toFixed(2)}</p>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         ) : (
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground mb-1">Total Sales</p>
+                  <p className="text-lg font-bold text-foreground">${receiptStats.total.toFixed(2)}</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground mb-1">Receipts</p>
+                  <p className="text-lg font-bold text-foreground">{receiptStats.count}</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Content based on active tab */}
+        {activeTab === "invoices" ? (
+          invoices.length === 0 ? (
+            <div className="text-center py-12">
+              <FileText className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-foreground mb-2">No invoices yet</h3>
+              <p className="text-muted-foreground mb-4">Create your first invoice to get started</p>
+            </div>
+          ) : (
           <div className="grid gap-4">
             {invoices.map((invoice) => (
               <Card key={invoice.id} className="overflow-hidden">
@@ -507,6 +809,71 @@ const Invoicing = () => {
               </Card>
             ))}
           </div>
+          )
+        ) : (
+          receipts.length === 0 ? (
+            <div className="text-center py-12">
+              <ReceiptIcon className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-foreground mb-2">No receipts yet</h3>
+              <p className="text-muted-foreground mb-4">Create your first receipt to get started</p>
+            </div>
+          ) : (
+            <div className="grid gap-4">
+              {receipts.map((receipt) => (
+                <Card key={receipt.id} className="overflow-hidden">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-lg text-card-foreground mb-1">
+                          {receipt.receiptNumber}
+                        </h3>
+                        {receipt.customerName && (
+                          <p className="text-sm text-muted-foreground">{receipt.customerName}</p>
+                        )}
+                        <p className="text-xs text-muted-foreground capitalize">
+                          Paid by {receipt.paymentMethod}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xl font-bold text-primary">${receipt.total.toFixed(2)}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground mb-3">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        <span>Date: {receipt.date}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <FileText className="h-3 w-3" />
+                        <span>{receipt.items.length} items</span>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => setViewingReceipt(receipt)}
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        View
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-destructive"
+                        onClick={() => handleDeleteReceipt(receipt.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )
         )}
 
         {/* View Invoice Dialog */}
@@ -517,22 +884,43 @@ const Invoicing = () => {
                 <DialogHeader>
                   <DialogTitle className="flex items-center justify-between">
                     <span>Invoice Preview</span>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handlePrint()}
-                      >
-                        <Printer className="h-4 w-4 mr-2" />
-                        Print
-                      </Button>
-                    </div>
+                    <ExportMenu
+                      elementRef={invoiceRef}
+                      fileName={viewingInvoice.invoiceNumber}
+                      documentType="invoice"
+                    />
                   </DialogTitle>
                 </DialogHeader>
-                <div ref={printRef} className="bg-gray-50 p-4 rounded-lg">
+                <div ref={invoiceRef} className="bg-gray-50 p-4 rounded-lg">
                   <InvoicePreview
                     invoice={viewingInvoice}
                     template={templates.find(t => t.id === viewingInvoice.templateId) || templates[0]}
+                  />
+                </div>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* View Receipt Dialog */}
+        <Dialog open={!!viewingReceipt} onOpenChange={() => setViewingReceipt(null)}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            {viewingReceipt && (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center justify-between">
+                    <span>Receipt Preview</span>
+                    <ExportMenu
+                      elementRef={receiptRef}
+                      fileName={viewingReceipt.receiptNumber}
+                      documentType="receipt"
+                    />
+                  </DialogTitle>
+                </DialogHeader>
+                <div ref={receiptRef} className="bg-gray-50 p-4 rounded-lg">
+                  <ReceiptPreview
+                    receipt={viewingReceipt}
+                    template={templates[0]}
                   />
                 </div>
               </>

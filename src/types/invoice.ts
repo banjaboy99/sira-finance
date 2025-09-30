@@ -24,6 +24,22 @@ export interface InvoiceTemplate {
   };
 }
 
+export interface Receipt {
+  id: string;
+  receiptNumber: string;
+  customerName: string;
+  date: string;
+  items: Array<{
+    name: string;
+    quantity: number;
+    price: number;
+  }>;
+  total: number;
+  paymentMethod: "cash" | "card" | "transfer";
+  notes?: string;
+  templateId: string;
+}
+
 export const DEFAULT_TEMPLATE: InvoiceTemplate = {
   id: "default",
   name: "Default Template",
