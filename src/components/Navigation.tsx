@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Package, FileText, Users, Home, PieChart } from "lucide-react";
+import { Package, FileText, Users, Home, PieChart, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const Navigation = () => {
@@ -11,6 +11,7 @@ export const Navigation = () => {
     { path: "/invoicing", icon: FileText, label: "Invoicing" },
     { path: "/suppliers", icon: Users, label: "Suppliers" },
     { path: "/finances", icon: PieChart, label: "Finances" },
+    { path: "/settings", icon: Settings, label: "Settings" },
   ];
 
   return (
