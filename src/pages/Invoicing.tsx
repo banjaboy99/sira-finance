@@ -27,7 +27,6 @@ import { InvoiceTemplate, DEFAULT_TEMPLATE, Receipt } from "@/types/invoice";
 import { InvoicePreview } from "@/components/InvoicePreview";
 import { ReceiptPreview } from "@/components/ReceiptPreview";
 import { TemplateEditor } from "@/components/TemplateEditor";
-import { ExportMenu } from "@/components/ExportMenu";
 
 interface InvoiceItem {
   name: string;
@@ -882,14 +881,7 @@ const Invoicing = () => {
             {viewingInvoice && (
               <>
                 <DialogHeader>
-                  <DialogTitle className="flex items-center justify-between">
-                    <span>Invoice Preview</span>
-                    <ExportMenu
-                      elementRef={invoiceRef}
-                      fileName={viewingInvoice.invoiceNumber}
-                      documentType="invoice"
-                    />
-                  </DialogTitle>
+                  <DialogTitle>Invoice Preview</DialogTitle>
                 </DialogHeader>
                 <div ref={invoiceRef} className="bg-gray-50 p-4 rounded-lg">
                   <InvoicePreview
@@ -908,14 +900,7 @@ const Invoicing = () => {
             {viewingReceipt && (
               <>
                 <DialogHeader>
-                  <DialogTitle className="flex items-center justify-between">
-                    <span>Receipt Preview</span>
-                    <ExportMenu
-                      elementRef={receiptRef}
-                      fileName={viewingReceipt.receiptNumber}
-                      documentType="receipt"
-                    />
-                  </DialogTitle>
+                  <DialogTitle>Receipt Preview</DialogTitle>
                 </DialogHeader>
                 <div ref={receiptRef} className="bg-gray-50 p-4 rounded-lg">
                   <ReceiptPreview

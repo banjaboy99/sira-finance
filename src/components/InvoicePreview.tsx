@@ -1,25 +1,23 @@
 import { InvoiceTemplate } from "@/types/invoice";
 
-interface Invoice {
-  id: string;
-  invoiceNumber: string;
-  customerName: string;
-  customerEmail: string;
-  customerAddress?: string;
-  date: string;
-  dueDate: string;
-  items: Array<{
-    name: string;
-    quantity: number;
-    price: number;
-  }>;
-  status: "paid" | "pending" | "overdue";
-  total: number;
-  notes?: string;
-}
-
 interface InvoicePreviewProps {
-  invoice: Invoice;
+  invoice: {
+    id: string;
+    invoiceNumber: string;
+    customerName: string;
+    customerEmail: string;
+    customerAddress?: string;
+    date: string;
+    dueDate: string;
+    items: Array<{
+      name: string;
+      quantity: number;
+      price: number;
+    }>;
+    status: "paid" | "pending" | "overdue";
+    total: number;
+    notes?: string;
+  };
   template: InvoiceTemplate;
 }
 
