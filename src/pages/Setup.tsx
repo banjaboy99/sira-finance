@@ -18,6 +18,7 @@ const Setup = () => {
   // Form state
   const [businessType, setBusinessType] = useState("");
   const [businessName, setBusinessName] = useState("");
+  const [useBrandName, setUseBrandName] = useState(false);
   const [currency, setCurrency] = useState("NGN");
   const [painPoints, setPainPoints] = useState<string[]>([]);
 
@@ -145,15 +146,34 @@ const Setup = () => {
 
           {/* Step 2: Business Name */}
           {step === 2 && (
-            <div className="space-y-2">
-              <Label htmlFor="business-name">Business Name</Label>
-              <Input
-                id="business-name"
-                placeholder="e.g., Baba Yusuf Electronics"
-                value={businessName}
-                onChange={(e) => setBusinessName(e.target.value)}
-                autoFocus
-              />
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="business-name">
+                  {useBrandName ? "Brand Name" : "Business Name"}
+                </Label>
+                <Input
+                  id="business-name"
+                  placeholder={useBrandName ? "e.g., Creative Studios" : "e.g., Baba Yusuf Electronics"}
+                  value={businessName}
+                  onChange={(e) => setBusinessName(e.target.value)}
+                  autoFocus
+                />
+              </div>
+              
+              {businessType === "freelancer" && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setUseBrandName(!useBrandName);
+                    setBusinessName("");
+                  }}
+                  className="text-sm text-muted-foreground hover:text-foreground"
+                >
+                  {useBrandName ? "or use business name instead?" : "or continue with brand name?"}
+                </Button>
+              )}
             </div>
           )}
 
