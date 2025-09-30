@@ -5,6 +5,13 @@ import { cn } from "@/lib/utils";
 export const Navigation = () => {
   const location = useLocation();
   
+  // Hide navigation on auth, onboarding, and setup pages
+  const hideNavigation = ['/auth', '/onboarding', '/setup'].includes(location.pathname);
+  
+  if (hideNavigation) {
+    return null;
+  }
+  
   const navItems = [
     { path: "/", icon: Home, label: "Home" },
     { path: "/inventory", icon: Package, label: "Inventory" },
