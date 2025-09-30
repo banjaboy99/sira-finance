@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,6 +15,7 @@ interface Message {
 
 export const HelpChat = () => {
   const { toast } = useToast();
+  const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
@@ -23,6 +25,13 @@ export const HelpChat = () => {
     },
   ]);
   const [input, setInput] = useState("");
+
+  // Hide on auth, onboarding, and setup pages
+  const hideChat = ['/auth', '/onboarding', '/setup'].includes(location.pathname);
+  
+  if (hideChat) {
+    return null;
+  }
 
   const quickQuestions = [
     "How do I add inventory?",

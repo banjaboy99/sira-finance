@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Package, TrendingUp, Users, Shield, ChevronRight, ChevronLeft } from "lucide-react";
+import { LanguageSelector } from "@/components/LanguageSelector";
 
 const Onboarding = () => {
   const navigate = useNavigate();
@@ -55,6 +56,11 @@ const Onboarding = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-background flex items-center justify-center p-4">
+      {/* Language Selector */}
+      <div className="fixed top-4 right-4 z-50">
+        <LanguageSelector />
+      </div>
+
       <Card className="w-full max-w-md">
         <CardContent className="pt-6">
           <div className="flex flex-col items-center text-center space-y-6">
