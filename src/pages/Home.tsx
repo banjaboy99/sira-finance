@@ -1,106 +1,165 @@
 import { Link } from "react-router-dom";
-import { Package, FileText, Users, ArrowRight } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Package, FileText, Users, ArrowRight, TrendingUp, AlertCircle, DollarSign, ShoppingCart } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { AdBanner } from "@/components/AdBanner";
 
 const Home = () => {
+  const [greeting, setGreeting] = useState("Welcome");
+  const [businessName, setBusinessName] = useState("");
+
+  useEffect(() => {
+    // Load business name
+    const setupData = localStorage.getItem("businessSetup");
+    if (setupData) {
+      const data = JSON.parse(setupData);
+      setBusinessName(data.businessName || "");
+    }
+
+    // Set greeting based on time
+    const hour = new Date().getHours();
+    if (hour < 12) setGreeting("Good morning");
+    else if (hour < 17) setGreeting("Good afternoon");
+    else setGreeting("Good evening");
+  }, []);
+
   const features = [
     {
-      title: "Inventory Management",
-      description: "Track stock levels, manage items, and get low stock alerts",
+      title: "Inventory",
+      description: "Track stock levels and manage items",
       icon: Package,
       path: "/inventory",
-      color: "bg-primary/10 text-primary",
+      color: "from-primary/20 to-primary/10",
+      iconColor: "text-primary",
     },
     {
       title: "Invoicing",
-      description: "Create and manage invoices for your customers",
+      description: "Create professional invoices",
       icon: FileText,
       path: "/invoicing",
-      color: "bg-accent/10 text-accent",
+      color: "from-accent/20 to-accent/10",
+      iconColor: "text-accent",
     },
     {
       title: "Suppliers",
-      description: "Manage supplier contacts with quick call and WhatsApp access",
+      description: "Manage your supplier contacts",
       icon: Users,
       path: "/suppliers",
-      color: "bg-secondary/10 text-secondary",
+      color: "from-secondary/20 to-secondary/10",
+      iconColor: "text-secondary",
+    },
+  ];
+
+  const stats = [
+    {
+      label: "Total Items",
+      value: "0",
+      icon: ShoppingCart,
+      color: "text-primary",
+      bgColor: "bg-primary/10",
+    },
+    {
+      label: "Pending Invoices",
+      value: "0",
+      icon: FileText,
+      color: "text-accent",
+      bgColor: "bg-accent/10",
+    },
+    {
+      label: "Active Suppliers",
+      value: "0",
+      icon: Users,
+      color: "text-secondary",
+      bgColor: "bg-secondary/10",
+    },
+    {
+      label: "Low Stock Items",
+      value: "0",
+      icon: AlertCircle,
+      color: "text-destructive",
+      bgColor: "bg-destructive/10",
     },
   ];
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-background pb-20 md:pb-6">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center">
-              <Package className="h-7 w-7 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">Business Manager</h1>
-              <p className="text-muted-foreground">Your all-in-one business toolkit</p>
-            </div>
-          </div>
+      <div className="container mx-auto px-4 py-6 md:py-8 max-w-6xl">
+        {/* Greeting Header */}
+        <div className="mb-8 animate-fade-in">
+          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
+            {greeting}
+            {businessName && (
+              <span className="block md:inline md:ml-2 text-primary">
+                {businessName}
+              </span>
+            )}
+          </h1>
+          <p className="text-muted-foreground">Here's what's happening with your business today</p>
         </div>
 
-        {/* Feature Cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {features.map((feature) => (
-            <Link key={feature.path} to={feature.path}>
-              <Card className="h-full transition-all hover:shadow-lg hover:scale-[1.02] cursor-pointer">
-                <CardHeader>
-                  <div className={`h-12 w-12 rounded-lg ${feature.color} flex items-center justify-center mb-3`}>
-                    <feature.icon className="h-6 w-6" />
+        {/* Ad Banner */}
+        <div className="mb-6 animate-fade-in" style={{ animationDelay: "0.1s" }}>
+          <AdBanner />
+        </div>
+
+        {/* Quick Stats Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 animate-fade-in" style={{ animationDelay: "0.2s" }}>
+          {stats.map((stat, idx) => (
+            <Card key={stat.label} className="hover:shadow-lg transition-shadow">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3">
+                  <div className={`h-10 w-10 rounded-lg ${stat.bgColor} flex items-center justify-center`}>
+                    <stat.icon className={`h-5 w-5 ${stat.color}`} />
                   </div>
-                  <CardTitle className="text-xl">{feature.title}</CardTitle>
-                  <CardDescription className="text-sm">
-                    {feature.description}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button variant="ghost" className="w-full justify-between group">
-                    Open
-                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                  </Button>
-                </CardContent>
-              </Card>
-            </Link>
+                  <div>
+                    <p className="text-2xl font-bold text-foreground">{stat.value}</p>
+                    <p className="text-xs text-muted-foreground">{stat.label}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
 
-        {/* Quick Stats */}
-        <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+        {/* Quick Actions */}
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold text-foreground mb-4">Quick Actions</h2>
+          <div className="grid gap-4 md:grid-cols-3 animate-fade-in" style={{ animationDelay: "0.3s" }}>
+            {features.map((feature) => (
+              <Link key={feature.path} to={feature.path} className="group">
+                <Card className="h-full transition-all hover:shadow-lg hover:scale-[1.02] hover:-translate-y-1">
+                  <CardHeader>
+                    <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-3 transition-transform group-hover:scale-110`}>
+                      <feature.icon className={`h-6 w-6 ${feature.iconColor}`} />
+                    </div>
+                    <CardTitle className="text-lg">{feature.title}</CardTitle>
+                    <CardDescription className="text-sm">
+                      {feature.description}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Button variant="ghost" className="w-full justify-between group/btn">
+                      Open
+                      <ArrowRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
+                    </Button>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* Recent Activity Placeholder */}
+        <div className="animate-fade-in" style={{ animationDelay: "0.4s" }}>
+          <h2 className="text-xl font-semibold text-foreground mb-4">Recent Activity</h2>
           <Card>
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <p className="text-2xl font-bold text-primary">0</p>
-                <p className="text-xs text-muted-foreground">Total Items</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <p className="text-2xl font-bold text-accent">0</p>
-                <p className="text-xs text-muted-foreground">Pending Invoices</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <p className="text-2xl font-bold text-secondary">0</p>
-                <p className="text-xs text-muted-foreground">Active Suppliers</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <p className="text-2xl font-bold text-destructive">0</p>
-                <p className="text-xs text-muted-foreground">Low Stock Items</p>
-              </div>
+            <CardContent className="py-12 text-center">
+              <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground mb-2">No recent activity yet</p>
+              <p className="text-sm text-muted-foreground">
+                Start by adding inventory items or creating your first invoice
+              </p>
             </CardContent>
           </Card>
         </div>
