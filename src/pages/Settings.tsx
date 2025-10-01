@@ -6,13 +6,14 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Globe, Bell, Shield, Download, Trash2, Moon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useTheme } from "@/contexts/ThemeContext";
 import { BackButton } from "@/components/BackButton";
 
 const Settings = () => {
   const { toast } = useToast();
+  const { theme, toggleTheme } = useTheme();
   const [language, setLanguage] = useState("en");
   const [notifications, setNotifications] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
   const [lowStockAlerts, setLowStockAlerts] = useState(true);
   const [invoiceReminders, setInvoiceReminders] = useState(true);
 
@@ -82,7 +83,7 @@ const Settings = () => {
                   <p className="font-medium">Dark Mode</p>
                   <p className="text-sm text-muted-foreground">Switch to dark theme</p>
                 </div>
-                <Switch checked={darkMode} onCheckedChange={setDarkMode} />
+                <Switch checked={theme === "dark"} onCheckedChange={toggleTheme} />
               </div>
             </CardContent>
           </Card>
