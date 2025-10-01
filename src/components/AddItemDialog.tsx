@@ -20,6 +20,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { InventoryItemType } from "./InventoryItem";
+import { inventoryItemSchema } from "@/lib/validations";
+import { useToast } from "@/hooks/use-toast";
 
 interface AddItemDialogProps {
   onAdd: (item: Omit<InventoryItemType, "id">) => void;
@@ -32,6 +34,7 @@ interface AddItemDialogProps {
 const categories = ["Electronics", "Furniture", "Supplies", "Equipment", "Other"];
 
 export const AddItemDialog = ({ onAdd, editItem, onUpdate, open, onOpenChange }: AddItemDialogProps) => {
+  const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -40,6 +43,7 @@ export const AddItemDialog = ({ onAdd, editItem, onUpdate, open, onOpenChange }:
     category: "",
     minStock: "",
   });
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (editItem) {
@@ -63,6 +67,7 @@ export const AddItemDialog = ({ onAdd, editItem, onUpdate, open, onOpenChange }:
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setValidationErrors({});
     
     const itemData = {
       name: formData.name,
@@ -71,6 +76,22 @@ export const AddItemDialog = ({ onAdd, editItem, onUpdate, open, onOpenChange }:
       category: formData.category,
       minStock: formData.minStock ? parseInt(formData.minStock) : undefined,
     };
+
+    // Validate input
+    const validation = inventoryItemSchema.safeParse(itemData);
+    if (!validation.success) {
+      const errors: Record<string, string> = {};
+      validation.error.errors.forEach((err) => {
+        if (err.path[0]) errors[err.path[0].toString()] = err.message;
+      });
+      setValidationErrors(errors);
+      toast({
+        title: "Validation Error",
+        description: "Please check the form for errors",
+        variant: "destructive",
+      });
+      return;
+    }
 
     if (editItem && onUpdate) {
       onUpdate({ ...itemData, id: editItem.id });
@@ -85,6 +106,7 @@ export const AddItemDialog = ({ onAdd, editItem, onUpdate, open, onOpenChange }:
       category: "",
       minStock: "",
     });
+    setValidationErrors({});
     
     const shouldClose = onOpenChange ? false : true;
     if (shouldClose) {
@@ -125,6 +147,9 @@ export const AddItemDialog = ({ onAdd, editItem, onUpdate, open, onOpenChange }:
                 placeholder="Enter item name"
                 required
               />
+              {validationErrors.name && (
+                <p className="text-sm text-destructive">{validationErrors.name}</p>
+              )}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="sku">SKU</Label>
@@ -135,6 +160,9 @@ export const AddItemDialog = ({ onAdd, editItem, onUpdate, open, onOpenChange }:
                 placeholder="Enter SKU code"
                 required
               />
+              {validationErrors.sku && (
+                <p className="text-sm text-destructive">{validationErrors.sku}</p>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">

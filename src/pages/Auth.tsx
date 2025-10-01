@@ -5,10 +5,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
 import { Package, Mail, Lock, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { LanguageSelector } from "@/components/LanguageSelector";
+import { loginSchema, signupSchema, calculatePasswordStrength } from "@/lib/validations";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -32,10 +34,26 @@ const Auth = () => {
   const [signupName, setSignupName] = useState("");
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordStrength, setPasswordStrength] = useState({ strength: 0, label: "", color: "" });
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setValidationErrors({});
+
+    // Validate input
+    const validation = loginSchema.safeParse({ email: loginEmail, password: loginPassword });
+    if (!validation.success) {
+      const errors: Record<string, string> = {};
+      validation.error.errors.forEach((err) => {
+        if (err.path[0]) errors[err.path[0].toString()] = err.message;
+      });
+      setValidationErrors(errors);
+      setIsLoading(false);
+      return;
+    }
 
     const { error } = await signIn(loginEmail, loginPassword);
     
@@ -62,6 +80,25 @@ const Auth = () => {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setValidationErrors({});
+
+    // Validate input
+    const validation = signupSchema.safeParse({ 
+      name: signupName, 
+      email: signupEmail, 
+      password: signupPassword,
+      confirmPassword 
+    });
+    
+    if (!validation.success) {
+      const errors: Record<string, string> = {};
+      validation.error.errors.forEach((err) => {
+        if (err.path[0]) errors[err.path[0].toString()] = err.message;
+      });
+      setValidationErrors(errors);
+      setIsLoading(false);
+      return;
+    }
 
     const { error } = await signUp(signupEmail, signupPassword, signupName);
     
@@ -81,6 +118,11 @@ const Auth = () => {
     });
     navigate("/setup");
     setIsLoading(false);
+  };
+
+  const handlePasswordChange = (password: string) => {
+    setSignupPassword(password);
+    setPasswordStrength(calculatePasswordStrength(password));
   };
 
   const handleGoogleAuth = () => {
@@ -144,6 +186,12 @@ const Auth = () => {
                       required
                     />
                   </div>
+                  {validationErrors.email && (
+                    <p className="text-sm text-destructive">{validationErrors.email}</p>
+                  )}
+                  {validationErrors.password && (
+                    <p className="text-sm text-destructive">{validationErrors.password}</p>
+                  )}
                 </div>
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? "Logging in..." : "Login"}
@@ -199,6 +247,9 @@ const Auth = () => {
                       required
                     />
                   </div>
+                  {validationErrors.name && (
+                    <p className="text-sm text-destructive">{validationErrors.name}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signup-email">Email</Label>
@@ -214,6 +265,9 @@ const Auth = () => {
                       required
                     />
                   </div>
+                  {validationErrors.email && (
+                    <p className="text-sm text-destructive">{validationErrors.email}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signup-password">Password</Label>
@@ -224,12 +278,43 @@ const Auth = () => {
                       type="password"
                       placeholder="••••••••"
                       value={signupPassword}
-                      onChange={(e) => setSignupPassword(e.target.value)}
+                      onChange={(e) => handlePasswordChange(e.target.value)}
                       className="pl-9"
                       required
-                      minLength={6}
                     />
                   </div>
+                  {signupPassword && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">Password strength:</span>
+                        <span className="font-medium" style={{ color: passwordStrength.color }}>
+                          {passwordStrength.label}
+                        </span>
+                      </div>
+                      <Progress value={passwordStrength.strength} className="h-1" />
+                    </div>
+                  )}
+                  {validationErrors.password && (
+                    <p className="text-sm text-destructive">{validationErrors.password}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-password">Confirm Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="confirm-password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="pl-9"
+                      required
+                    />
+                  </div>
+                  {validationErrors.confirmPassword && (
+                    <p className="text-sm text-destructive">{validationErrors.confirmPassword}</p>
+                  )}
                 </div>
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? "Creating account..." : "Create Account"}
