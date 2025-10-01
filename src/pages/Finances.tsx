@@ -206,7 +206,7 @@ const Finances = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <BackButton title="Finances" subtitle="Track budgets and expenses for your business" />
+      <BackButton title="Finances" subtitle="Track budgets and expenses for your business" to="/" />
       <div className="container mx-auto px-4 py-6 pb-20 md:pb-6">
 
         {/* Summary Cards */}

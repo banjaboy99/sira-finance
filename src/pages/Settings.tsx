@@ -35,7 +35,7 @@ const Settings = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <BackButton title="Settings" subtitle="Manage your app preferences and settings" />
+      <BackButton title="Settings" subtitle="Manage your app preferences and settings" to="/" />
       <div className="container mx-auto px-4 py-8 max-w-2xl pb-20 md:pb-6">
 
         <div className="space-y-6">

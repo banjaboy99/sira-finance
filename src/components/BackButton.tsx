@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 interface BackButtonProps {
   title: string;
   subtitle?: string;
+  to?: string;
 }
 
-export const BackButton = ({ title, subtitle }: BackButtonProps) => {
+export const BackButton = ({ title, subtitle, to }: BackButtonProps) => {
   const navigate = useNavigate();
 
   return (
@@ -17,7 +18,7 @@ export const BackButton = ({ title, subtitle }: BackButtonProps) => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate(-1)}
+            onClick={() => to ? navigate(to) : navigate(-1)}
             className="h-10 w-10"
           >
             <ArrowLeft className="h-5 w-5" />
