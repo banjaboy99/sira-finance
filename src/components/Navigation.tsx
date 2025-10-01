@@ -13,7 +13,7 @@ export const Navigation = () => {
   }
   
   const navItems = [
-    { path: "/", icon: Home, label: "Home" },
+    { path: "/", icon: Home, label: "Dashboard" },
     { path: "/inventory", icon: Package, label: "Inventory" },
     { path: "/invoicing", icon: FileText, label: "Invoicing" },
     { path: "/suppliers", icon: Users, label: "Suppliers" },

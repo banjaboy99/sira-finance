@@ -13,6 +13,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -24,6 +33,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { InvoiceTemplate, DEFAULT_TEMPLATE, Receipt } from "@/types/invoice";
 import { InvoicePreview } from "@/components/InvoicePreview";
 import { ReceiptPreview } from "@/components/ReceiptPreview";
@@ -52,6 +62,7 @@ interface Invoice {
 
 const Invoicing = () => {
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const invoiceRef = useRef<HTMLDivElement>(null);
   const receiptRef = useRef<HTMLDivElement>(null);
   const [showHelp, setShowHelp] = useState(true);
@@ -367,19 +378,156 @@ const Invoicing = () => {
     <div className="min-h-[calc(100vh-4rem)] bg-background pb-20 md:pb-6">
       <div className="container mx-auto px-4 py-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Invoicing & Receipts</h1>
             <p className="text-sm text-muted-foreground">
               {invoices.length} invoices · {receipts.length} receipts
             </p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" className="gap-2" onClick={handleTemplateEdit}>
+          <div className="flex gap-2 flex-wrap">
+            <Button variant="outline" className="gap-2 flex-1 sm:flex-none" onClick={handleTemplateEdit}>
               <Settings className="h-5 w-5" />
-              Template
+              <span className="hidden sm:inline">Template</span>
             </Button>
-            <Dialog open={isReceiptDialogOpen} onOpenChange={setIsReceiptDialogOpen}>
+            {isMobile ? (
+              <Drawer open={isReceiptDialogOpen} onOpenChange={setIsReceiptDialogOpen}>
+                <DrawerTrigger asChild>
+                  <Button variant="outline" className="gap-2 flex-1 sm:flex-none" onClick={() => setReceiptItems([])}>
+                    <ReceiptIcon className="h-5 w-5" />
+                    <span className="hidden sm:inline">New Receipt</span>
+                  </Button>
+                </DrawerTrigger>
+                <DrawerContent className="max-h-[90vh]">
+                  <div className="overflow-y-auto px-4">
+                    <form onSubmit={handleReceiptSubmit}>
+                      <DrawerHeader>
+                        <DrawerTitle>Create New Receipt</DrawerTitle>
+                        <DrawerDescription>
+                          Add customer details and items to create a receipt
+                        </DrawerDescription>
+                      </DrawerHeader>
+                      <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                          <Label htmlFor="receiptCustomerName">Customer Name (Optional)</Label>
+                          <Input
+                            id="receiptCustomerName"
+                            value={receiptFormData.customerName}
+                            onChange={(e) => setReceiptFormData({ ...receiptFormData, customerName: e.target.value })}
+                            placeholder="Customer Name"
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="paymentMethod">Payment Method</Label>
+                          <Select
+                            value={receiptFormData.paymentMethod}
+                            onValueChange={(value: "cash" | "card" | "transfer") => 
+                              setReceiptFormData({ ...receiptFormData, paymentMethod: value })
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="cash">Cash</SelectItem>
+                              <SelectItem value="card">Card</SelectItem>
+                              <SelectItem value="transfer">Transfer</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="receiptNotes">Notes (Optional)</Label>
+                          <Textarea
+                            id="receiptNotes"
+                            value={receiptFormData.notes}
+                            onChange={(e) => setReceiptFormData({ ...receiptFormData, notes: e.target.value })}
+                            placeholder="Thank you message, etc."
+                            rows={2}
+                          />
+                        </div>
+
+                        <div className="border-t pt-4">
+                          <h3 className="font-semibold mb-3">Receipt Items</h3>
+                          <div className="grid gap-3">
+                            <div className="grid gap-2">
+                              <Label htmlFor="receiptItemNameMobile">Item Name</Label>
+                              <Input
+                                id="receiptItemNameMobile"
+                                value={receiptFormData.itemName}
+                                onChange={(e) => setReceiptFormData({ ...receiptFormData, itemName: e.target.value })}
+                                placeholder="Product or Service"
+                              />
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div className="grid gap-2">
+                                <Label htmlFor="receiptItemQuantityMobile">Quantity</Label>
+                                <Input
+                                  id="receiptItemQuantityMobile"
+                                  type="number"
+                                  min="1"
+                                  value={receiptFormData.itemQuantity}
+                                  onChange={(e) => setReceiptFormData({ ...receiptFormData, itemQuantity: e.target.value })}
+                                />
+                              </div>
+                              <div className="grid gap-2">
+                                <Label htmlFor="receiptItemPriceMobile">Price</Label>
+                                <Input
+                                  id="receiptItemPriceMobile"
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  value={receiptFormData.itemPrice}
+                                  onChange={(e) => setReceiptFormData({ ...receiptFormData, itemPrice: e.target.value })}
+                                  placeholder="0.00"
+                                />
+                              </div>
+                            </div>
+                            <Button type="button" onClick={handleAddReceiptItem} className="w-full">
+                              <Plus className="h-4 w-4 mr-2" />
+                              Add Item
+                            </Button>
+
+                            {receiptItems.length > 0 && (
+                              <div className="border rounded-lg p-3 space-y-2">
+                                {receiptItems.map((item, index) => (
+                                  <div key={index} className="flex items-center justify-between text-sm">
+                                    <span className="flex-1">{item.name}</span>
+                                    <span className="text-muted-foreground mx-2">×{item.quantity}</span>
+                                    <span className="font-medium min-w-[80px] text-right">
+                                      ${(item.quantity * item.price).toFixed(2)}
+                                    </span>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 ml-2"
+                                      onClick={() => handleRemoveReceiptItem(index)}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                ))}
+                                <div className="flex items-center justify-between pt-2 border-t font-semibold">
+                                  <span>Total</span>
+                                  <span>${calculateReceiptTotal().toFixed(2)}</span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <DrawerFooter className="flex-row gap-2">
+                        <Button type="button" variant="outline" onClick={() => setIsReceiptDialogOpen(false)} className="flex-1">
+                          Cancel
+                        </Button>
+                        <Button type="submit" className="flex-1">Create Receipt</Button>
+                      </DrawerFooter>
+                    </form>
+                  </div>
+                </DrawerContent>
+              </Drawer>
+            ) : (
+              <Dialog open={isReceiptDialogOpen} onOpenChange={setIsReceiptDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" className="gap-2" onClick={() => setReceiptItems([])}>
                   <ReceiptIcon className="h-5 w-5" />
@@ -509,153 +657,307 @@ const Invoicing = () => {
                   </DialogFooter>
                 </form>
               </DialogContent>
-            </Dialog>
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="gap-2" onClick={() => setInvoiceItems([])}>
-                  <Plus className="h-5 w-5" />
-                  New Invoice
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-                <form onSubmit={handleSubmit}>
-                  <DialogHeader>
-                    <DialogTitle>Create New Invoice</DialogTitle>
-                    <DialogDescription>
-                      Add customer details and items to create an invoice
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="customerName">Customer Name *</Label>
-                      <Input
-                        id="customerName"
-                        value={formData.customerName}
-                        onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
-                        placeholder="Company or Person Name"
-                        required
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="customerEmail">Customer Email *</Label>
-                      <Input
-                        id="customerEmail"
-                        type="email"
-                        value={formData.customerEmail}
-                        onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value })}
-                        placeholder="customer@email.com"
-                        required
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="customerAddress">Customer Address (Optional)</Label>
-                      <Textarea
-                        id="customerAddress"
-                        value={formData.customerAddress}
-                        onChange={(e) => setFormData({ ...formData, customerAddress: e.target.value })}
-                        placeholder="123 Client Street, City, State, ZIP"
-                        rows={2}
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="dueDate">Due Date *</Label>
-                      <Input
-                        id="dueDate"
-                        type="date"
-                        value={formData.dueDate}
-                        onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                        required
-                      />
-                    </div>
-
-                    <div className="grid gap-2">
-                      <Label htmlFor="notes">Notes (Optional)</Label>
-                      <Textarea
-                        id="notes"
-                        value={formData.notes}
-                        onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                        placeholder="Payment terms, special instructions, etc."
-                        rows={2}
-                      />
-                    </div>
-
-                    <div className="border-t pt-4">
-                      <h3 className="font-semibold mb-3">Invoice Items</h3>
-                      <div className="grid gap-3">
-                        <div className="grid grid-cols-[2fr_1fr_1fr_auto] gap-2 items-end">
-                          <div className="grid gap-2">
-                            <Label htmlFor="itemName">Item Name</Label>
-                            <Input
-                              id="itemName"
-                              value={formData.itemName}
-                              onChange={(e) => setFormData({ ...formData, itemName: e.target.value })}
-                              placeholder="Product or Service"
-                            />
-                          </div>
-                          <div className="grid gap-2">
-                            <Label htmlFor="itemQuantity">Qty</Label>
-                            <Input
-                              id="itemQuantity"
-                              type="number"
-                              min="1"
-                              value={formData.itemQuantity}
-                              onChange={(e) => setFormData({ ...formData, itemQuantity: e.target.value })}
-                            />
-                          </div>
-                          <div className="grid gap-2">
-                            <Label htmlFor="itemPrice">Price</Label>
-                            <Input
-                              id="itemPrice"
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              value={formData.itemPrice}
-                              onChange={(e) => setFormData({ ...formData, itemPrice: e.target.value })}
-                              placeholder="0.00"
-                            />
-                          </div>
-                          <Button type="button" onClick={handleAddItem} size="icon">
-                            <Plus className="h-4 w-4" />
-                          </Button>
+              </Dialog>
+            )}
+            {isMobile ? (
+              <Drawer open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DrawerTrigger asChild>
+                  <Button className="gap-2 flex-1 sm:flex-none" onClick={() => setInvoiceItems([])}>
+                    <Plus className="h-5 w-5" />
+                    <span className="hidden sm:inline">New Invoice</span>
+                  </Button>
+                </DrawerTrigger>
+                <DrawerContent className="max-h-[90vh]">
+                  <div className="overflow-y-auto px-4">
+                    <form onSubmit={handleSubmit}>
+                      <DrawerHeader>
+                        <DrawerTitle>Create New Invoice</DrawerTitle>
+                        <DrawerDescription>
+                          Add customer details and items to create an invoice
+                        </DrawerDescription>
+                      </DrawerHeader>
+                      <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                          <Label htmlFor="customerNameMobile">Customer Name *</Label>
+                          <Input
+                            id="customerNameMobile"
+                            value={formData.customerName}
+                            onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
+                            placeholder="Company or Person Name"
+                            required
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="customerEmailMobile">Customer Email *</Label>
+                          <Input
+                            id="customerEmailMobile"
+                            type="email"
+                            value={formData.customerEmail}
+                            onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value })}
+                            placeholder="customer@email.com"
+                            required
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="customerAddressMobile">Customer Address (Optional)</Label>
+                          <Textarea
+                            id="customerAddressMobile"
+                            value={formData.customerAddress}
+                            onChange={(e) => setFormData({ ...formData, customerAddress: e.target.value })}
+                            placeholder="123 Client Street, City, State, ZIP"
+                            rows={2}
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="dueDateMobile">Due Date *</Label>
+                          <Input
+                            id="dueDateMobile"
+                            type="date"
+                            value={formData.dueDate}
+                            onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                            required
+                          />
                         </div>
 
-                        {invoiceItems.length > 0 && (
-                          <div className="border rounded-lg p-3 space-y-2">
-                            {invoiceItems.map((item, index) => (
-                              <div key={index} className="flex items-center justify-between text-sm">
-                                <span className="flex-1">{item.name}</span>
-                                <span className="text-muted-foreground mx-2">×{item.quantity}</span>
-                                <span className="font-medium min-w-[80px] text-right">
-                                  ${(item.quantity * item.price).toFixed(2)}
-                                </span>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 ml-2"
-                                  onClick={() => handleRemoveItem(index)}
-                                >
-                                  <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
-                              </div>
-                            ))}
-                            <div className="border-t pt-2 flex justify-between font-semibold">
-                              <span>Total:</span>
-                              <span>${calculateTotal().toFixed(2)}</span>
+                        <div className="grid gap-2">
+                          <Label htmlFor="notesMobile">Notes (Optional)</Label>
+                          <Textarea
+                            id="notesMobile"
+                            value={formData.notes}
+                            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                            placeholder="Payment terms, special instructions, etc."
+                            rows={2}
+                          />
+                        </div>
+
+                        <div className="border-t pt-4">
+                          <h3 className="font-semibold mb-3">Invoice Items</h3>
+                          <div className="grid gap-3">
+                            <div className="grid gap-2">
+                              <Label htmlFor="itemNameMobile">Item Name</Label>
+                              <Input
+                                id="itemNameMobile"
+                                value={formData.itemName}
+                                onChange={(e) => setFormData({ ...formData, itemName: e.target.value })}
+                                placeholder="Product or Service"
+                              />
                             </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div className="grid gap-2">
+                                <Label htmlFor="itemQuantityMobile">Quantity</Label>
+                                <Input
+                                  id="itemQuantityMobile"
+                                  type="number"
+                                  min="1"
+                                  value={formData.itemQuantity}
+                                  onChange={(e) => setFormData({ ...formData, itemQuantity: e.target.value })}
+                                />
+                              </div>
+                              <div className="grid gap-2">
+                                <Label htmlFor="itemPriceMobile">Price</Label>
+                                <Input
+                                  id="itemPriceMobile"
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  value={formData.itemPrice}
+                                  onChange={(e) => setFormData({ ...formData, itemPrice: e.target.value })}
+                                  placeholder="0.00"
+                                />
+                              </div>
+                            </div>
+                            <Button type="button" onClick={handleAddItem} className="w-full">
+                              <Plus className="h-4 w-4 mr-2" />
+                              Add Item
+                            </Button>
+
+                            {invoiceItems.length > 0 && (
+                              <div className="border rounded-lg p-3 space-y-2">
+                                {invoiceItems.map((item, index) => (
+                                  <div key={index} className="flex items-center justify-between text-sm">
+                                    <span className="flex-1">{item.name}</span>
+                                    <span className="text-muted-foreground mx-2">×{item.quantity}</span>
+                                    <span className="font-medium min-w-[80px] text-right">
+                                      ${(item.quantity * item.price).toFixed(2)}
+                                    </span>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 ml-2"
+                                      onClick={() => handleRemoveItem(index)}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                ))}
+                                <div className="border-t pt-2 flex justify-between font-semibold">
+                                  <span>Total</span>
+                                  <span>${calculateTotal().toFixed(2)}</span>
+                                </div>
+                              </div>
+                            )}
                           </div>
-                        )}
+                        </div>
+                      </div>
+                      <DrawerFooter className="flex-row gap-2">
+                        <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="flex-1">
+                          Cancel
+                        </Button>
+                        <Button type="submit" disabled={invoiceItems.length === 0} className="flex-1">Create Invoice</Button>
+                      </DrawerFooter>
+                    </form>
+                  </div>
+                </DrawerContent>
+              </Drawer>
+            ) : (
+              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="gap-2" onClick={() => setInvoiceItems([])}>
+                    <Plus className="h-5 w-5" />
+                    New Invoice
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+                  <form onSubmit={handleSubmit}>
+                    <DialogHeader>
+                      <DialogTitle>Create New Invoice</DialogTitle>
+                      <DialogDescription>
+                        Add customer details and items to create an invoice
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="customerName">Customer Name *</Label>
+                        <Input
+                          id="customerName"
+                          value={formData.customerName}
+                          onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
+                          placeholder="Company or Person Name"
+                          required
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="customerEmail">Customer Email *</Label>
+                        <Input
+                          id="customerEmail"
+                          type="email"
+                          value={formData.customerEmail}
+                          onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value })}
+                          placeholder="customer@email.com"
+                          required
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="customerAddress">Customer Address (Optional)</Label>
+                        <Textarea
+                          id="customerAddress"
+                          value={formData.customerAddress}
+                          onChange={(e) => setFormData({ ...formData, customerAddress: e.target.value })}
+                          placeholder="123 Client Street, City, State, ZIP"
+                          rows={2}
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="dueDate">Due Date *</Label>
+                        <Input
+                          id="dueDate"
+                          type="date"
+                          value={formData.dueDate}
+                          onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                          required
+                        />
+                      </div>
+
+                      <div className="grid gap-2">
+                        <Label htmlFor="notes">Notes (Optional)</Label>
+                        <Textarea
+                          id="notes"
+                          value={formData.notes}
+                          onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                          placeholder="Payment terms, special instructions, etc."
+                          rows={2}
+                        />
+                      </div>
+
+                      <div className="border-t pt-4">
+                        <h3 className="font-semibold mb-3">Invoice Items</h3>
+                        <div className="grid gap-3">
+                          <div className="grid grid-cols-[2fr_1fr_1fr_auto] gap-2 items-end">
+                            <div className="grid gap-2">
+                              <Label htmlFor="itemName">Item Name</Label>
+                              <Input
+                                id="itemName"
+                                value={formData.itemName}
+                                onChange={(e) => setFormData({ ...formData, itemName: e.target.value })}
+                                placeholder="Product or Service"
+                              />
+                            </div>
+                            <div className="grid gap-2">
+                              <Label htmlFor="itemQuantity">Qty</Label>
+                              <Input
+                                id="itemQuantity"
+                                type="number"
+                                min="1"
+                                value={formData.itemQuantity}
+                                onChange={(e) => setFormData({ ...formData, itemQuantity: e.target.value })}
+                              />
+                            </div>
+                            <div className="grid gap-2">
+                              <Label htmlFor="itemPrice">Price</Label>
+                              <Input
+                                id="itemPrice"
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={formData.itemPrice}
+                                onChange={(e) => setFormData({ ...formData, itemPrice: e.target.value })}
+                                placeholder="0.00"
+                              />
+                            </div>
+                            <Button type="button" onClick={handleAddItem} size="icon">
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </div>
+
+                          {invoiceItems.length > 0 && (
+                            <div className="border rounded-lg p-3 space-y-2">
+                              {invoiceItems.map((item, index) => (
+                                <div key={index} className="flex items-center justify-between text-sm">
+                                  <span className="flex-1">{item.name}</span>
+                                  <span className="text-muted-foreground mx-2">×{item.quantity}</span>
+                                  <span className="font-medium min-w-[80px] text-right">
+                                    ${(item.quantity * item.price).toFixed(2)}
+                                  </span>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 ml-2"
+                                    onClick={() => handleRemoveItem(index)}
+                                  >
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                  </Button>
+                                </div>
+                              ))}
+                              <div className="border-t pt-2 flex justify-between font-semibold">
+                                <span>Total:</span>
+                                <span>${calculateTotal().toFixed(2)}</span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <DialogFooter>
-                    <Button type="submit" disabled={invoiceItems.length === 0}>
-                      Create Invoice
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
+                    <DialogFooter>
+                      <Button type="submit" disabled={invoiceItems.length === 0}>
+                        Create Invoice
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            )}
           </div>
         </div>
 

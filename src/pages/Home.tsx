@@ -113,7 +113,7 @@ const Home = () => {
                 </span>
               )}
             </h1>
-            <p className="text-muted-foreground">Here's what's happening with your business today</p>
+            <p className="text-muted-foreground">Dashboard · {new Date().toLocaleDateString()}</p>
           </div>
 
           <div className="flex items-center gap-3">
