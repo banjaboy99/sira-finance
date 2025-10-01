@@ -103,7 +103,7 @@ const Home = () => {
     <div className="min-h-[calc(100vh-4rem)] bg-background pb-20 md:pb-6">
       <div className="container mx-auto px-4 py-6 md:py-8 max-w-6xl">
         {/* Header with Menu */}
-        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-8 animate-fade-in">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 animate-fade-in">
           <div>
             <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
               {greeting}
