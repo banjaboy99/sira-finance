@@ -27,8 +27,12 @@ const defaultActions: QuickAction[] = [
   { id: "supplier", label: "Add Supplier", icon: Users, path: "/suppliers", color: "text-purple-500" },
 ];
 
-export const QuickActionsMenu = () => {
-  const [isOpen, setIsOpen] = useState(false);
+interface QuickActionsMenuProps {
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export const QuickActionsMenu = ({ isOpen, onOpenChange }: QuickActionsMenuProps) => {
   const [actions] = useState<QuickAction[]>(defaultActions);
   const navigate = useNavigate();
 
@@ -39,20 +43,13 @@ export const QuickActionsMenu = () => {
     if (action.action) {
       action.action();
     }
-    setIsOpen(false);
+    onOpenChange(false);
   };
 
   return (
     <>
-      <Button
-        onClick={() => setIsOpen(true)}
-        size="icon"
-        className="fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg md:bottom-6 z-40 bg-primary hover:bg-primary/90"
-      >
-        <Plus className="h-6 w-6" />
-      </Button>
 
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <Dialog open={isOpen} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center justify-between">
@@ -61,7 +58,7 @@ export const QuickActionsMenu = () => {
                 variant="ghost"
                 size="icon"
                 className="h-6 w-6"
-                onClick={() => setIsOpen(false)}
+                onClick={() => onOpenChange(false)}
               >
                 <X className="h-4 w-4" />
               </Button>

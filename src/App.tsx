@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,17 +22,20 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <div className="flex flex-col min-h-screen">
-            <Navigation />
-            <QuickActionsMenu />
-            <main className="flex-1">
+const App = () => {
+  const [isQuickActionsOpen, setIsQuickActionsOpen] = useState(false);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
+            <div className="flex flex-col min-h-screen">
+              <Navigation onQuickActionsClick={() => setIsQuickActionsOpen(true)} />
+              <QuickActionsMenu isOpen={isQuickActionsOpen} onOpenChange={setIsQuickActionsOpen} />
+              <main className="flex-1">
               <Routes>
                 <Route path="/onboarding" element={<Onboarding />} />
                 <Route path="/auth" element={<Auth />} />
@@ -48,11 +52,12 @@ const App = () => (
               </Routes>
             </main>
             <HelpChat />
-          </div>
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+            </div>
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
