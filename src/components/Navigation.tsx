@@ -7,7 +7,7 @@ export const Navigation = ({ onQuickActionsClick }: { onQuickActionsClick?: () =
   const location = useLocation();
   
   // Hide navigation on auth, onboarding, and setup pages
-  const hideNavigation = ['/auth', '/onboarding', '/setup'].includes(location.pathname);
+  const hideNavigation = ['/auth', '/onboarding', '/setup', '/profile', '/finances', '/settings'].includes(location.pathname);
   
   if (hideNavigation) {
     return null;

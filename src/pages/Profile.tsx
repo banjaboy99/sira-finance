@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { User, Mail, Building, MapPin, Phone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { LocationAutocomplete } from "@/components/LocationAutocomplete";
+import { BackButton } from "@/components/BackButton";
 
 const Profile = () => {
   const { toast } = useToast();
@@ -69,12 +70,9 @@ const Profile = () => {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-background pb-20 md:pb-6">
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground">Profile</h1>
-          <p className="text-muted-foreground">Manage your business profile information</p>
-        </div>
+    <div className="min-h-screen bg-background">
+      <BackButton title="Profile" subtitle="Manage your business profile information" />
+      <div className="container mx-auto px-4 py-8 max-w-2xl pb-20 md:pb-6">
 
         <div className="space-y-6">
           {/* Profile Header */}

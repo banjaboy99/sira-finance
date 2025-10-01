@@ -24,6 +24,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { BackButton } from "@/components/BackButton";
 
 interface Budget {
   id: string;
@@ -204,16 +205,9 @@ const Finances = () => {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-background pb-20 md:pb-6">
-      <div className="container mx-auto px-4 py-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Finances</h1>
-            <p className="text-sm text-muted-foreground">
-              Track budgets and expenses for your business
-            </p>
-          </div>
-        </div>
+    <div className="min-h-screen bg-background">
+      <BackButton title="Finances" subtitle="Track budgets and expenses for your business" />
+      <div className="container mx-auto px-4 py-6 pb-20 md:pb-6">
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">

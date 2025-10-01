@@ -6,6 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Globe, Bell, Shield, Download, Trash2, Moon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { BackButton } from "@/components/BackButton";
 
 const Settings = () => {
   const { toast } = useToast();
@@ -33,12 +34,9 @@ const Settings = () => {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-background pb-20 md:pb-6">
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground">Settings</h1>
-          <p className="text-muted-foreground">Manage your app preferences and settings</p>
-        </div>
+    <div className="min-h-screen bg-background">
+      <BackButton title="Settings" subtitle="Manage your app preferences and settings" />
+      <div className="container mx-auto px-4 py-8 max-w-2xl pb-20 md:pb-6">
 
         <div className="space-y-6">
           {/* Language & Region */}
