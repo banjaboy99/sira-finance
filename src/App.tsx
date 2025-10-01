@@ -36,22 +36,21 @@ const App = () => {
               <Navigation onQuickActionsClick={() => setIsQuickActionsOpen(true)} />
               <QuickActionsMenu isOpen={isQuickActionsOpen} onOpenChange={setIsQuickActionsOpen} />
               <main className="flex-1">
-              <Routes>
-                <Route path="/onboarding" element={<Onboarding />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/setup" element={<Setup />} />
-                <Route path="/" element={<Home />} />
-                <Route path="/inventory" element={<Inventory />} />
-                <Route path="/invoicing" element={<Invoicing />} />
-                <Route path="/suppliers" element={<Suppliers />} />
-                <Route path="/finances" element={<Finances />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/settings" element={<Settings />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </main>
-            <HelpChat />
+                <Routes>
+                  <Route path="/onboarding" element={<Onboarding />} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/setup" element={<Setup />} />
+                  <Route path="/" element={<Home />} />
+                  <Route path="/inventory" element={<Inventory />} />
+                  <Route path="/invoicing" element={<Invoicing />} />
+                  <Route path="/suppliers" element={<Suppliers />} />
+                  <Route path="/finances" element={<Finances />} />
+                  <Route path="/profile" element={<Profile />} />
+                  <Route path="/settings" element={<Settings />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </main>
+              <HelpChat />
             </div>
           </AuthProvider>
         </BrowserRouter>
