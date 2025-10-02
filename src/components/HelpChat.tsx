@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,6 +25,15 @@ export const HelpChat = () => {
     },
   ]);
   const [input, setInput] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   // Hide on auth, onboarding, and setup pages
   const hideChat = ['/auth', '/onboarding', '/setup'].includes(location.pathname);
@@ -100,7 +109,7 @@ export const HelpChat = () => {
           <X className="h-4 w-4" />
         </Button>
       </CardHeader>
-      <CardContent className="flex-1 flex flex-col p-4 pt-0 gap-4">
+      <CardContent className="flex-1 flex flex-col p-4 pt-0 gap-4 overflow-hidden">
         <ScrollArea className="flex-1 pr-4">
           <div className="space-y-4">
             {messages.map((msg, idx) => (
@@ -119,6 +128,7 @@ export const HelpChat = () => {
                 </div>
               </div>
             ))}
+            <div ref={messagesEndRef} />
           </div>
         </ScrollArea>
 
