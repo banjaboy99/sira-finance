@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Package, Info, X } from "lucide-react";
+import { Search, Package, Info, X, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -47,7 +47,7 @@ const Inventory = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [editingItem, setEditingItem] = useState<InventoryItemType | null>(null);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const categories = ["all", ...Array.from(new Set(items.map((item) => item.category)))];
 
@@ -74,7 +74,7 @@ const Inventory = () => {
   const handleUpdateItem = (updatedItem: InventoryItemType) => {
     setItems(items.map((item) => (item.id === updatedItem.id ? updatedItem : item)));
     setEditingItem(null);
-    setEditDialogOpen(false);
+    setDialogOpen(false);
     toast({
       title: "Item updated",
       description: `${updatedItem.name} has been updated.`,
@@ -99,7 +99,7 @@ const Inventory = () => {
 
   const handleEdit = (item: InventoryItemType) => {
     setEditingItem(item);
-    setEditDialogOpen(true);
+    setDialogOpen(true);
   };
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
@@ -112,14 +112,9 @@ const Inventory = () => {
       {/* Header */}
       <header className="sticky top-0 z-10 bg-card border-b shadow-sm">
         <div className="container mx-auto px-4 py-4">
-          <div className="mb-4">
-            <div className="text-center mb-4">
-              <h1 className="text-2xl font-bold text-foreground">Inventory</h1>
-              <p className="text-sm text-muted-foreground">Stock Management</p>
-            </div>
-            <div className="flex justify-center">
-              <AddItemDialog onAdd={handleAddItem} />
-            </div>
+          <div className="text-center mb-4">
+            <h1 className="text-2xl font-bold text-foreground">Inventory</h1>
+            <p className="text-sm text-muted-foreground">Stock Management</p>
           </div>
 
           {/* Stats */}
@@ -135,7 +130,7 @@ const Inventory = () => {
           </div>
 
           {/* Search and Filter */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 mb-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -157,6 +152,21 @@ const Inventory = () => {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Add Item Button - Centered */}
+          <div className="flex justify-center">
+            <Button 
+              onClick={() => {
+                setEditingItem(null);
+                setDialogOpen(true);
+              }}
+              className="gap-2" 
+              size="lg"
+            >
+              <Plus className="h-5 w-5" />
+              Add Item
+            </Button>
           </div>
         </div>
       </header>
@@ -209,14 +219,14 @@ const Inventory = () => {
         )}
       </main>
 
-      {/* Edit Dialog */}
+      {/* Add/Edit Item Dialog */}
       <AddItemDialog
         editItem={editingItem}
         onUpdate={handleUpdateItem}
         onAdd={handleAddItem}
-        open={editDialogOpen}
+        open={dialogOpen}
         onOpenChange={(open) => {
-          setEditDialogOpen(open);
+          setDialogOpen(open);
           if (!open) setEditingItem(null);
         }}
       />
