@@ -13,36 +13,22 @@ import {
 import { InventoryItem, InventoryItemType } from "@/components/InventoryItem";
 import { AddItemDialog } from "@/components/AddItemDialog";
 import { useToast } from "@/hooks/use-toast";
+import { useOfflineInventory } from "@/hooks/useOfflineInventory";
 
 const Inventory = () => {
   const { toast } = useToast();
+  const { items: dbItems, addItem, updateItem, deleteItem, isLoading } = useOfflineInventory();
   const [showHelp, setShowHelp] = useState(true);
-  const [items, setItems] = useState<InventoryItemType[]>([
-    {
-      id: "demo-1",
-      name: "Sample Product (Click to Edit)",
-      sku: "DEMO-001",
-      quantity: 25,
-      category: "Tutorial",
-      minStock: 10,
-    },
-    {
-      id: "demo-2",
-      name: "Low Stock Example",
-      sku: "DEMO-002",
-      quantity: 3,
-      category: "Tutorial",
-      minStock: 10,
-    },
-    {
-      id: "demo-3",
-      name: "Out of Stock Demo",
-      sku: "DEMO-003",
-      quantity: 0,
-      category: "Tutorial",
-      minStock: 5,
-    },
-  ]);
+  
+  // Convert database items to component format
+  const items: InventoryItemType[] = dbItems.map(item => ({
+    id: item.id!,
+    name: item.name,
+    sku: item.id!, // Using ID as SKU for now
+    quantity: item.quantity,
+    category: item.category || "Uncategorized",
+    minStock: item.low_stock_threshold || 10,
+  }));
   
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -59,42 +45,80 @@ const Inventory = () => {
     return matchesSearch && matchesCategory;
   });
 
-  const handleAddItem = (newItem: Omit<InventoryItemType, "id">) => {
-    const item: InventoryItemType = {
-      ...newItem,
-      id: Date.now().toString(),
-    };
-    setItems([...items, item]);
-    toast({
-      title: "Item added",
-      description: `${item.name} has been added to inventory.`,
-    });
+  const handleAddItem = async (newItem: Omit<InventoryItemType, "id">) => {
+    try {
+      await addItem({
+        name: newItem.name,
+        category: newItem.category,
+        quantity: newItem.quantity,
+        price: 0, // Default price
+        low_stock_threshold: newItem.minStock,
+        notes: "",
+      });
+      toast({
+        title: "Item added",
+        description: `${newItem.name} has been added to inventory.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add item. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleUpdateItem = (updatedItem: InventoryItemType) => {
-    setItems(items.map((item) => (item.id === updatedItem.id ? updatedItem : item)));
-    setEditingItem(null);
-    setDialogOpen(false);
-    toast({
-      title: "Item updated",
-      description: `${updatedItem.name} has been updated.`,
-    });
+  const handleUpdateItem = async (updatedItem: InventoryItemType) => {
+    try {
+      await updateItem(updatedItem.id, {
+        name: updatedItem.name,
+        category: updatedItem.category,
+        quantity: updatedItem.quantity,
+        low_stock_threshold: updatedItem.minStock,
+      });
+      setEditingItem(null);
+      setDialogOpen(false);
+      toast({
+        title: "Item updated",
+        description: `${updatedItem.name} has been updated.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update item. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleDeleteItem = (id: string) => {
+  const handleDeleteItem = async (id: string) => {
     const item = items.find((i) => i.id === id);
-    setItems(items.filter((item) => item.id !== id));
-    toast({
-      title: "Item deleted",
-      description: `${item?.name} has been removed from inventory.`,
-      variant: "destructive",
-    });
+    try {
+      await deleteItem(id);
+      toast({
+        title: "Item deleted",
+        description: `${item?.name} has been removed from inventory.`,
+        variant: "destructive",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete item. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleUpdateQuantity = (id: string, newQuantity: number) => {
-    setItems(
-      items.map((item) => (item.id === id ? { ...item, quantity: newQuantity } : item))
-    );
+  const handleUpdateQuantity = async (id: string, newQuantity: number) => {
+    try {
+      await updateItem(id, { quantity: newQuantity });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update quantity. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleEdit = (item: InventoryItemType) => {
@@ -106,6 +130,17 @@ const Inventory = () => {
   const lowStockItems = items.filter(
     (item) => item.minStock && item.quantity <= item.minStock
   ).length;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-[calc(100vh-4rem)] bg-background pb-20 md:pb-6 flex items-center justify-center">
+        <div className="text-center">
+          <Package className="h-16 w-16 text-muted-foreground mx-auto mb-4 animate-pulse" />
+          <p className="text-muted-foreground">Loading inventory...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-background pb-20 md:pb-6">
