@@ -112,12 +112,14 @@ const Inventory = () => {
       {/* Header */}
       <header className="sticky top-0 z-10 bg-card border-b shadow-sm">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between mb-4">
-            <div>
+          <div className="mb-4">
+            <div className="text-center mb-4">
               <h1 className="text-2xl font-bold text-foreground">Inventory</h1>
               <p className="text-sm text-muted-foreground">Stock Management</p>
             </div>
-            <AddItemDialog onAdd={handleAddItem} />
+            <div className="flex justify-center">
+              <AddItemDialog onAdd={handleAddItem} />
+            </div>
           </div>
 
           {/* Stats */}
