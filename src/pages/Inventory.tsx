@@ -130,7 +130,7 @@ const Inventory = () => {
           </div>
 
           {/* Search and Filter */}
-          <div className="flex gap-2 mb-4">
+          <div className="flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -152,21 +152,6 @@ const Inventory = () => {
                 ))}
               </SelectContent>
             </Select>
-          </div>
-
-          {/* Add Item Button - Centered */}
-          <div className="flex justify-center">
-            <Button 
-              onClick={() => {
-                setEditingItem(null);
-                setDialogOpen(true);
-              }}
-              className="gap-2" 
-              size="lg"
-            >
-              <Plus className="h-5 w-5" />
-              Add Item
-            </Button>
           </div>
         </div>
       </header>

@@ -378,14 +378,72 @@ const Invoicing = () => {
     <div className="min-h-[calc(100vh-4rem)] bg-background pb-20 md:pb-6">
       <div className="container mx-auto px-4 py-6">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Invoicing & Receipts</h1>
-            <p className="text-sm text-muted-foreground">
-              {invoices.length} invoices · {receipts.length} receipts
-            </p>
+        <div className="mb-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">Invoicing & Receipts</h1>
+              <p className="text-sm text-muted-foreground">
+                {invoices.length} invoices · {receipts.length} receipts
+              </p>
+            </div>
+            <Button variant="outline" className="gap-2" onClick={handleTemplateEdit}>
+              <Settings className="h-5 w-5" />
+              Customize Template
+            </Button>
           </div>
-          <div className="flex gap-2 flex-wrap">
+
+          {/* Action Cards */}
+          <div className="grid md:grid-cols-2 gap-4 mb-6">
+            <Card className="border-2 hover:border-primary/50 transition-colors cursor-pointer bg-gradient-to-br from-primary/5 to-transparent"
+              onClick={() => {
+                setInvoiceItems([]);
+                setIsDialogOpen(true);
+              }}>
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  <div className="bg-primary/10 p-3 rounded-lg">
+                    <FileText className="h-6 w-6 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-lg mb-1">Create Invoice</h3>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Generate professional invoices with due dates and payment tracking
+                    </p>
+                    <div className="flex items-center gap-2 text-sm text-primary font-medium">
+                      <Plus className="h-4 w-4" />
+                      <span>New Invoice</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 hover:border-primary/50 transition-colors cursor-pointer bg-gradient-to-br from-primary/5 to-transparent"
+              onClick={() => {
+                setReceiptItems([]);
+                setIsReceiptDialogOpen(true);
+              }}>
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  <div className="bg-primary/10 p-3 rounded-lg">
+                    <ReceiptIcon className="h-6 w-6 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-lg mb-1">Create Receipt</h3>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Issue instant receipts for completed sales and payments
+                    </p>
+                    <div className="flex items-center gap-2 text-sm text-primary font-medium">
+                      <Plus className="h-4 w-4" />
+                      <span>New Receipt</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="hidden">
             <Button variant="outline" className="gap-2 flex-1 sm:flex-none" onClick={handleTemplateEdit}>
               <Settings className="h-5 w-5" />
               <span className="hidden sm:inline">Template</span>
@@ -393,10 +451,7 @@ const Invoicing = () => {
             {isMobile ? (
               <Drawer open={isReceiptDialogOpen} onOpenChange={setIsReceiptDialogOpen}>
                 <DrawerTrigger asChild>
-                  <Button variant="outline" className="gap-2 flex-1 sm:flex-none" onClick={() => setReceiptItems([])}>
-                    <ReceiptIcon className="h-5 w-5" />
-                    <span className="hidden sm:inline">New Receipt</span>
-                  </Button>
+                  <div style={{display: 'none'}} />
                 </DrawerTrigger>
                 <DrawerContent className="max-h-[90vh]">
                   <div className="overflow-y-auto px-4">
@@ -529,10 +584,7 @@ const Invoicing = () => {
             ) : (
               <Dialog open={isReceiptDialogOpen} onOpenChange={setIsReceiptDialogOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline" className="gap-2" onClick={() => setReceiptItems([])}>
-                  <ReceiptIcon className="h-5 w-5" />
-                  New Receipt
-                </Button>
+                <div style={{display: 'none'}} />
               </DialogTrigger>
               <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                 <form onSubmit={handleReceiptSubmit}>
@@ -662,10 +714,7 @@ const Invoicing = () => {
             {isMobile ? (
               <Drawer open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DrawerTrigger asChild>
-                  <Button className="gap-2 flex-1 sm:flex-none" onClick={() => setInvoiceItems([])}>
-                    <Plus className="h-5 w-5" />
-                    <span className="hidden sm:inline">New Invoice</span>
-                  </Button>
+                  <div style={{display: 'none'}} />
                 </DrawerTrigger>
                 <DrawerContent className="max-h-[90vh]">
                   <div className="overflow-y-auto px-4">
@@ -813,10 +862,7 @@ const Invoicing = () => {
             ) : (
               <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button className="gap-2" onClick={() => setInvoiceItems([])}>
-                    <Plus className="h-5 w-5" />
-                    New Invoice
-                  </Button>
+                  <div style={{display: 'none'}} />
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                   <form onSubmit={handleSubmit}>
