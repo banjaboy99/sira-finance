@@ -30,27 +30,27 @@ export const Navigation = ({ onQuickActionsClick }: { onQuickActionsClick?: () =
     switch (businessType) {
       case "trader":
         return [
+          { path: "/", icon: Home, label: "Dashboard" },
           { path: "/invoicing", icon: FileText, label: "Invoices" },
           { path: "/inventory", icon: Package, label: "Inventory" },
-          { path: "/", icon: Home, label: "Dashboard" },
           { path: "/suppliers", icon: Users, label: "Suppliers" },
           { path: "/reports", icon: BarChart3, label: "Reports" },
         ];
       
       case "store":
         return [
+          { path: "/", icon: Home, label: "Dashboard" },
           { path: "/invoicing", icon: FileText, label: "Invoices" },
           { path: "/inventory", icon: Package, label: "Inventory" },
-          { path: "/", icon: Home, label: "Dashboard" },
           { path: "/expenses", icon: Receipt, label: "Expenses" },
           { path: "/reports", icon: BarChart3, label: "Reports" },
         ];
       
       case "freelancer":
         return [
+          { path: "/", icon: Home, label: "Dashboard" },
           { path: "/invoicing", icon: FileText, label: "Invoices" },
           { path: "/clients", icon: UserCheck, label: "Clients" },
-          { path: "/", icon: Home, label: "Dashboard" },
           { path: "/expenses", icon: Receipt, label: "Expenses" },
           { path: "/reports", icon: BarChart3, label: "Reports" },
         ];
@@ -58,9 +58,9 @@ export const Navigation = ({ onQuickActionsClick }: { onQuickActionsClick?: () =
       case "other":
       default:
         return [
+          { path: "/", icon: Home, label: "Dashboard" },
           { path: "/invoicing", icon: FileText, label: "Invoices" },
           { path: "/inventory", icon: Package, label: "Inventory" },
-          { path: "/", icon: Home, label: "Dashboard" },
           { path: "/expenses", icon: Receipt, label: "Expenses" },
           { path: "/reports", icon: BarChart3, label: "Reports" },
         ];
