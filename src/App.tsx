@@ -18,6 +18,9 @@ import Settings from "./pages/Settings";
 import Inventory from "./pages/Inventory";
 import Invoicing from "./pages/Invoicing";
 import Suppliers from "./pages/Suppliers";
+import Clients from "./pages/Clients";
+import Expenses from "./pages/Expenses";
+import Reports from "./pages/Reports";
 import Finances from "./pages/Finances";
 import NotFound from "./pages/NotFound";
 
@@ -46,6 +49,9 @@ const App = () => {
                     <Route path="/inventory" element={<Inventory />} />
                     <Route path="/invoicing" element={<Invoicing />} />
                     <Route path="/suppliers" element={<Suppliers />} />
+                    <Route path="/clients" element={<Clients />} />
+                    <Route path="/expenses" element={<Expenses />} />
+                    <Route path="/reports" element={<Reports />} />
                     <Route path="/finances" element={<Finances />} />
                     <Route path="/profile" element={<Profile />} />
                     <Route path="/settings" element={<Settings />} />

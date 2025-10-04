@@ -1,10 +1,22 @@
 import { Link, useLocation } from "react-router-dom";
-import { Package, FileText, Users, Home, Plus } from "lucide-react";
+import { Package, FileText, Users, Home, Plus, UserCheck, Receipt, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
+
+type BusinessType = "trader" | "store" | "freelancer" | "other";
 
 export const Navigation = ({ onQuickActionsClick }: { onQuickActionsClick?: () => void }) => {
   const location = useLocation();
+  const [businessType, setBusinessType] = useState<BusinessType>("trader");
+  
+  useEffect(() => {
+    const setupData = localStorage.getItem("businessSetup");
+    if (setupData) {
+      const data = JSON.parse(setupData);
+      setBusinessType(data.businessType || "trader");
+    }
+  }, []);
   
   // Hide navigation on auth, onboarding, and setup pages
   const hideNavigation = ['/auth', '/onboarding', '/setup', '/profile', '/finances', '/settings'].includes(location.pathname);
@@ -13,12 +25,49 @@ export const Navigation = ({ onQuickActionsClick }: { onQuickActionsClick?: () =
     return null;
   }
   
-  const navItems = [
-    { path: "/", icon: Home, label: "Dashboard" },
-    { path: "/inventory", icon: Package, label: "Inventory" },
-    { path: "/invoicing", icon: FileText, label: "Invoicing" },
-    { path: "/suppliers", icon: Users, label: "Suppliers" },
-  ];
+  // Dynamic navigation based on business type
+  const getNavItems = () => {
+    const baseItems = [
+      { path: "/invoicing", icon: FileText, label: "Invoices" },
+    ];
+
+    switch (businessType) {
+      case "trader":
+        return [
+          ...baseItems,
+          { path: "/inventory", icon: Package, label: "Inventory" },
+          { path: "/suppliers", icon: Users, label: "Suppliers" },
+          { path: "/reports", icon: BarChart3, label: "Reports" },
+        ];
+      
+      case "store":
+        return [
+          ...baseItems,
+          { path: "/inventory", icon: Package, label: "Inventory" },
+          { path: "/expenses", icon: Receipt, label: "Expenses" },
+          { path: "/reports", icon: BarChart3, label: "Reports" },
+        ];
+      
+      case "freelancer":
+        return [
+          ...baseItems,
+          { path: "/clients", icon: UserCheck, label: "Clients" },
+          { path: "/expenses", icon: Receipt, label: "Expenses" },
+          { path: "/reports", icon: BarChart3, label: "Reports" },
+        ];
+      
+      case "other":
+      default:
+        return [
+          ...baseItems,
+          { path: "/inventory", icon: Package, label: "Inventory" },
+          { path: "/expenses", icon: Receipt, label: "Expenses" },
+          { path: "/reports", icon: BarChart3, label: "Reports" },
+        ];
+    }
+  };
+
+  const navItems = getNavItems();
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-card border-t shadow-lg z-50 md:relative md:border-b md:border-t-0">
