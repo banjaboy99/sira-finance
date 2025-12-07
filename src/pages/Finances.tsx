@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { DollarSign, TrendingDown, PieChart, Plus, Trash2, Calendar } from "lucide-react";
+import { DollarSign, TrendingDown, PieChart, Plus, Trash2, Calendar, Cloud } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,22 +25,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { BackButton } from "@/components/BackButton";
-
-interface Budget {
-  id: string;
-  category: string;
-  amount: number;
-  period: "monthly" | "quarterly" | "yearly";
-}
-
-interface Expense {
-  id: string;
-  description: string;
-  amount: number;
-  category: string;
-  date: string;
-  notes?: string;
-}
+import { useOfflineBudgets } from "@/hooks/useOfflineBudgets";
+import { useOfflineExpenses } from "@/hooks/useOfflineExpenses";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const CATEGORIES = [
   "Inventory",
@@ -58,29 +45,8 @@ const CATEGORIES = [
 
 const Finances = () => {
   const { toast } = useToast();
-
-  const [budgets, setBudgets] = useState<Budget[]>([
-    { id: "1", category: "Inventory", amount: 5000, period: "monthly" },
-    { id: "2", category: "Marketing", amount: 1000, period: "monthly" },
-  ]);
-
-  const [expenses, setExpenses] = useState<Expense[]>([
-    {
-      id: "1",
-      description: "Stock purchase - Rice and Beans",
-      amount: 2500,
-      category: "Inventory",
-      date: "2025-01-15",
-      notes: "Bulk purchase from supplier",
-    },
-    {
-      id: "2",
-      description: "Social media ads",
-      amount: 350,
-      category: "Marketing",
-      date: "2025-01-10",
-    },
-  ]);
+  const { budgets, addBudget, deleteBudget, isLoading: budgetsLoading } = useOfflineBudgets();
+  const { expenses, addExpense, deleteExpense, isLoading: expensesLoading } = useOfflineExpenses();
 
   const [budgetDialogOpen, setBudgetDialogOpen] = useState(false);
   const [expenseDialogOpen, setExpenseDialogOpen] = useState(false);
@@ -99,7 +65,7 @@ const Finances = () => {
     notes: "",
   });
 
-  const handleAddBudget = (e: React.FormEvent) => {
+  const handleAddBudget = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!budgetForm.category || !budgetForm.amount) {
@@ -111,14 +77,12 @@ const Finances = () => {
       return;
     }
 
-    const newBudget: Budget = {
-      id: Date.now().toString(),
+    await addBudget({
       category: budgetForm.category,
       amount: parseFloat(budgetForm.amount),
       period: budgetForm.period,
-    };
+    });
 
-    setBudgets([...budgets, newBudget]);
     toast({
       title: "Budget added",
       description: `Budget for ${budgetForm.category} has been set`,
@@ -128,7 +92,7 @@ const Finances = () => {
     setBudgetDialogOpen(false);
   };
 
-  const handleAddExpense = (e: React.FormEvent) => {
+  const handleAddExpense = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!expenseForm.description || !expenseForm.amount || !expenseForm.category) {
@@ -140,19 +104,20 @@ const Finances = () => {
       return;
     }
 
-    const newExpense: Expense = {
-      id: Date.now().toString(),
+    // Find matching budget for the category
+    const matchingBudget = budgets.find(b => b.category === expenseForm.category);
+
+    await addExpense({
       description: expenseForm.description,
       amount: parseFloat(expenseForm.amount),
       category: expenseForm.category,
       date: expenseForm.date,
-      notes: expenseForm.notes || undefined,
-    };
+      budget_id: matchingBudget?.id,
+    });
 
-    setExpenses([newExpense, ...expenses]);
     toast({
       title: "Expense added",
-      description: `$${newExpense.amount.toFixed(2)} expense recorded`,
+      description: `$${parseFloat(expenseForm.amount).toFixed(2)} expense recorded`,
     });
 
     setExpenseForm({
@@ -165,16 +130,16 @@ const Finances = () => {
     setExpenseDialogOpen(false);
   };
 
-  const handleDeleteBudget = (id: string) => {
-    setBudgets(budgets.filter((b) => b.id !== id));
+  const handleDeleteBudget = async (id: string) => {
+    await deleteBudget(id);
     toast({
       title: "Budget deleted",
       description: "Budget has been removed",
     });
   };
 
-  const handleDeleteExpense = (id: string) => {
-    setExpenses(expenses.filter((e) => e.id !== id));
+  const handleDeleteExpense = async (id: string) => {
+    await deleteExpense(id);
     toast({
       title: "Expense deleted",
       description: "Expense has been removed",
@@ -204,6 +169,8 @@ const Finances = () => {
     return { color: "bg-success/10 text-success border-success/20", status: "On Track" };
   };
 
+  const isLoading = budgetsLoading || expensesLoading;
+
   return (
     <div className="min-h-screen bg-background">
       <BackButton title="Finances" subtitle="Track budgets and expenses for your business" to="/" />
@@ -219,12 +186,18 @@ const Finances = () => {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">
-                ${calculateTotalBudget().toFixed(2)}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {budgets.length} categories
-              </p>
+              {isLoading ? (
+                <Skeleton className="h-8 w-24" />
+              ) : (
+                <>
+                  <div className="text-2xl font-bold text-foreground">
+                    ${calculateTotalBudget().toFixed(2)}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {budgets.length} categories
+                  </p>
+                </>
+              )}
             </CardContent>
           </Card>
 
@@ -236,12 +209,18 @@ const Finances = () => {
               <TrendingDown className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">
-                ${calculateTotalSpending().toFixed(2)}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {expenses.length} expenses
-              </p>
+              {isLoading ? (
+                <Skeleton className="h-8 w-24" />
+              ) : (
+                <>
+                  <div className="text-2xl font-bold text-foreground">
+                    ${calculateTotalSpending().toFixed(2)}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {expenses.length} expenses
+                  </p>
+                </>
+              )}
             </CardContent>
           </Card>
 
@@ -253,12 +232,21 @@ const Finances = () => {
               <PieChart className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">
-                ${(calculateTotalBudget() - calculateTotalSpending()).toFixed(2)}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {((1 - calculateTotalSpending() / calculateTotalBudget()) * 100).toFixed(1)}% of budget
-              </p>
+              {isLoading ? (
+                <Skeleton className="h-8 w-24" />
+              ) : (
+                <>
+                  <div className="text-2xl font-bold text-foreground">
+                    ${(calculateTotalBudget() - calculateTotalSpending()).toFixed(2)}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {calculateTotalBudget() > 0 
+                      ? `${((1 - calculateTotalSpending() / calculateTotalBudget()) * 100).toFixed(1)}% of budget`
+                      : "No budget set"
+                    }
+                  </p>
+                </>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -351,67 +339,87 @@ const Finances = () => {
               </Dialog>
             </div>
 
-            <div className="grid gap-4">
-              {budgets.map((budget) => {
-                const spent = calculateCategorySpending(budget.category);
-                const percentage = (spent / budget.amount) * 100;
-                const status = getBudgetStatus(budget.category, budget.amount);
-
-                return (
-                  <Card key={budget.id}>
+            {isLoading ? (
+              <div className="grid gap-4">
+                {[1, 2].map((i) => (
+                  <Card key={i}>
                     <CardContent className="pt-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-lg text-foreground">
-                            {budget.category}
-                          </h3>
-                          <p className="text-sm text-muted-foreground capitalize">
-                            {budget.period} budget
-                          </p>
-                        </div>
-                        <Badge variant="outline" className={status.color}>
-                          {status.status}
-                        </Badge>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="ml-2"
-                          onClick={() => handleDeleteBudget(budget.id)}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">
-                            ${spent.toFixed(2)} spent of ${budget.amount.toFixed(2)}
-                          </span>
-                          <span className="font-medium text-foreground">
-                            {percentage.toFixed(0)}%
-                          </span>
-                        </div>
-                        <div className="w-full bg-muted rounded-full h-2.5">
-                          <div
-                            className="h-2.5 rounded-full transition-all"
-                            style={{
-                              width: `${Math.min(percentage, 100)}%`,
-                              backgroundColor: percentage >= 100 ? "hsl(var(--destructive))" : percentage >= 80 ? "hsl(var(--warning))" : "hsl(var(--success))",
-                            }}
-                          />
-                        </div>
-                      </div>
+                      <Skeleton className="h-20 w-full" />
                     </CardContent>
                   </Card>
-                );
-              })}
-              {budgets.length === 0 && (
-                <Card>
-                  <CardContent className="pt-6 text-center text-muted-foreground">
-                    No budgets set. Click "Add Budget" to create one.
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="grid gap-4">
+                {budgets.map((budget) => {
+                  const spent = calculateCategorySpending(budget.category);
+                  const percentage = (spent / budget.amount) * 100;
+                  const status = getBudgetStatus(budget.category, budget.amount);
+
+                  return (
+                    <Card key={budget.id}>
+                      <CardContent className="pt-6">
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-semibold text-lg text-foreground">
+                                {budget.category}
+                              </h3>
+                              {!budget.synced && (
+                                <Badge variant="outline" className="text-xs bg-warning/10 text-warning border-warning/20">
+                                  <Cloud className="h-3 w-3 mr-1" />
+                                  Pending sync
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground capitalize">
+                              {budget.period || 'monthly'} budget
+                            </p>
+                          </div>
+                          <Badge variant="outline" className={status.color}>
+                            {status.status}
+                          </Badge>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="ml-2"
+                            onClick={() => handleDeleteBudget(budget.id)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">
+                              ${spent.toFixed(2)} spent of ${budget.amount.toFixed(2)}
+                            </span>
+                            <span className="font-medium text-foreground">
+                              {percentage.toFixed(0)}%
+                            </span>
+                          </div>
+                          <div className="w-full bg-muted rounded-full h-2.5">
+                            <div
+                              className="h-2.5 rounded-full transition-all"
+                              style={{
+                                width: `${Math.min(percentage, 100)}%`,
+                                backgroundColor: percentage >= 100 ? "hsl(var(--destructive))" : percentage >= 80 ? "hsl(var(--warning))" : "hsl(var(--success))",
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+                {budgets.length === 0 && (
+                  <Card>
+                    <CardContent className="pt-6 text-center text-muted-foreground">
+                      No budgets set. Click "Add Budget" to create one.
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            )}
           </TabsContent>
 
           {/* Expenses Tab */}
@@ -513,48 +521,63 @@ const Finances = () => {
               </Dialog>
             </div>
 
-            <div className="grid gap-4">
-              {expenses.map((expense) => (
-                <Card key={expense.id}>
-                  <CardContent className="pt-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="font-semibold text-foreground">{expense.description}</h3>
-                          <Badge variant="outline">{expense.category}</Badge>
+            {isLoading ? (
+              <div className="grid gap-4">
+                {[1, 2, 3].map((i) => (
+                  <Card key={i}>
+                    <CardContent className="pt-6">
+                      <Skeleton className="h-16 w-full" />
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="grid gap-4">
+                {expenses.map((expense) => (
+                  <Card key={expense.id}>
+                    <CardContent className="pt-6">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="font-semibold text-foreground">{expense.description}</h3>
+                            <Badge variant="outline">{expense.category}</Badge>
+                            {!expense.synced && (
+                              <Badge variant="outline" className="text-xs bg-warning/10 text-warning border-warning/20">
+                                <Cloud className="h-3 w-3 mr-1" />
+                                Pending sync
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              {expense.date}
+                            </span>
+                            <span className="text-lg font-bold text-foreground">
+                              ${expense.amount.toFixed(2)}
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {expense.date}
-                          </span>
-                          <span className="text-lg font-bold text-foreground">
-                            ${expense.amount.toFixed(2)}
-                          </span>
-                        </div>
-                        {expense.notes && (
-                          <p className="text-sm text-muted-foreground mt-2">{expense.notes}</p>
-                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteExpense(expense.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDeleteExpense(expense.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-              {expenses.length === 0 && (
-                <Card>
-                  <CardContent className="pt-6 text-center text-muted-foreground">
-                    No expenses recorded. Click "Add Expense" to track one.
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                {expenses.length === 0 && (
+                  <Card>
+                    <CardContent className="pt-6 text-center text-muted-foreground">
+                      No expenses recorded. Click "Add Expense" to track one.
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            )}
           </TabsContent>
 
           {/* Analysis Tab */}
@@ -565,37 +588,45 @@ const Finances = () => {
                   <CardTitle>Spending by Category</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {CATEGORIES.map((category) => {
-                      const spent = calculateCategorySpending(category);
-                      const totalSpent = calculateTotalSpending();
-                      const percentage = totalSpent > 0 ? (spent / totalSpent) * 100 : 0;
+                  {isLoading ? (
+                    <div className="space-y-4">
+                      {[1, 2, 3].map((i) => (
+                        <Skeleton key={i} className="h-8 w-full" />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {CATEGORIES.map((category) => {
+                        const spent = calculateCategorySpending(category);
+                        const totalSpent = calculateTotalSpending();
+                        const percentage = totalSpent > 0 ? (spent / totalSpent) * 100 : 0;
 
-                      if (spent === 0) return null;
+                        if (spent === 0) return null;
 
-                      return (
-                        <div key={category}>
-                          <div className="flex justify-between text-sm mb-2">
-                            <span className="font-medium text-foreground">{category}</span>
-                            <span className="text-muted-foreground">
-                              ${spent.toFixed(2)} ({percentage.toFixed(1)}%)
-                            </span>
+                        return (
+                          <div key={category}>
+                            <div className="flex justify-between text-sm mb-2">
+                              <span className="font-medium text-foreground">{category}</span>
+                              <span className="text-muted-foreground">
+                                ${spent.toFixed(2)} ({percentage.toFixed(1)}%)
+                              </span>
+                            </div>
+                            <div className="w-full bg-muted rounded-full h-2">
+                              <div
+                                className="h-2 rounded-full bg-primary"
+                                style={{ width: `${percentage}%` }}
+                              />
+                            </div>
                           </div>
-                          <div className="w-full bg-muted rounded-full h-2">
-                            <div
-                              className="h-2 rounded-full bg-primary"
-                              style={{ width: `${percentage}%` }}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
-                    {calculateTotalSpending() === 0 && (
-                      <p className="text-center text-muted-foreground">
-                        No expenses to analyze yet
-                      </p>
-                    )}
-                  </div>
+                        );
+                      })}
+                      {calculateTotalSpending() === 0 && (
+                        <p className="text-center text-muted-foreground">
+                          No expenses to analyze yet
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -604,34 +635,42 @@ const Finances = () => {
                   <CardTitle>Budget vs Actual</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {budgets.map((budget) => {
-                      const spent = calculateCategorySpending(budget.category);
-                      const difference = budget.amount - spent;
+                  {isLoading ? (
+                    <div className="space-y-4">
+                      {[1, 2].map((i) => (
+                        <Skeleton key={i} className="h-12 w-full" />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {budgets.map((budget) => {
+                        const spent = calculateCategorySpending(budget.category);
+                        const difference = budget.amount - spent;
 
-                      return (
-                        <div key={budget.id} className="flex justify-between items-center py-2 border-b last:border-0">
-                          <div>
-                            <p className="font-medium text-foreground">{budget.category}</p>
-                            <p className="text-sm text-muted-foreground capitalize">{budget.period}</p>
+                        return (
+                          <div key={budget.id} className="flex justify-between items-center py-2 border-b last:border-0">
+                            <div>
+                              <p className="font-medium text-foreground">{budget.category}</p>
+                              <p className="text-sm text-muted-foreground capitalize">{budget.period || 'monthly'}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-semibold text-foreground">
+                                ${spent.toFixed(2)} / ${budget.amount.toFixed(2)}
+                              </p>
+                              <p className={`text-sm ${difference >= 0 ? "text-success" : "text-destructive"}`}>
+                                {difference >= 0 ? "+" : ""}${difference.toFixed(2)}
+                              </p>
+                            </div>
                           </div>
-                          <div className="text-right">
-                            <p className="font-semibold text-foreground">
-                              ${spent.toFixed(2)} / ${budget.amount.toFixed(2)}
-                            </p>
-                            <p className={`text-sm ${difference >= 0 ? "text-success" : "text-destructive"}`}>
-                              {difference >= 0 ? "+" : ""}${difference.toFixed(2)}
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                    {budgets.length === 0 && (
-                      <p className="text-center text-muted-foreground">
-                        Set budgets to see comparison
-                      </p>
-                    )}
-                  </div>
+                        );
+                      })}
+                      {budgets.length === 0 && (
+                        <p className="text-center text-muted-foreground">
+                          Set budgets to see comparison
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
