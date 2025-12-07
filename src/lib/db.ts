@@ -70,6 +70,63 @@ export interface SpecialOrder {
   deleted?: boolean;
 }
 
+export interface Client {
+  id?: string;
+  user_id: string;
+  name: string;
+  company?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+  synced: boolean;
+  deleted?: boolean;
+}
+
+export interface Invoice {
+  id?: string;
+  user_id: string;
+  invoice_number: string;
+  client_id?: string;
+  client_name: string;
+  client_email?: string;
+  client_phone?: string;
+  client_address?: string;
+  items: any[];
+  subtotal: number;
+  tax_rate?: number;
+  tax_amount?: number;
+  discount?: number;
+  total: number;
+  notes?: string;
+  due_date?: string;
+  status?: string;
+  created_at: string;
+  updated_at: string;
+  synced: boolean;
+  deleted?: boolean;
+}
+
+export interface Receipt {
+  id?: string;
+  user_id: string;
+  receipt_number: string;
+  invoice_id?: string;
+  client_name: string;
+  items: any[];
+  subtotal: number;
+  tax_amount?: number;
+  total: number;
+  payment_method?: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+  synced: boolean;
+  deleted?: boolean;
+}
+
 export interface SyncQueue {
   id?: number;
   table_name: string;
@@ -87,17 +144,23 @@ class PocketStockDB extends Dexie {
   suppliers!: Table<Supplier>;
   budgets!: Table<Budget>;
   special_orders!: Table<SpecialOrder>;
+  clients!: Table<Client>;
+  invoices!: Table<Invoice>;
+  receipts!: Table<Receipt>;
   sync_queue!: Table<SyncQueue>;
 
   constructor() {
     super('PocketStockDB');
     
-    this.version(1).stores({
+    this.version(2).stores({
       inventory: 'id, user_id, name, category, synced, deleted',
       expenses: 'id, user_id, category, date, synced, deleted',
       suppliers: 'id, user_id, name, synced, deleted',
       budgets: 'id, user_id, category, synced, deleted',
       special_orders: 'id, user_id, customer_name, status, synced, deleted',
+      clients: 'id, user_id, name, synced, deleted',
+      invoices: 'id, user_id, invoice_number, client_id, status, synced, deleted',
+      receipts: 'id, user_id, receipt_number, invoice_id, synced, deleted',
       sync_queue: '++id, table_name, record_id, operation, created_at',
     });
   }

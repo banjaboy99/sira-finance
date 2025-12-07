@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Phone, MessageCircle, Mail, Plus, Edit, Trash2, Building, Info, X } from "lucide-react";
+import { Phone, MessageCircle, Mail, Plus, Edit, Trash2, Building, Info, X, Package } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,42 +18,18 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { LocationAutocomplete } from "@/components/LocationAutocomplete";
-
-interface Supplier {
-  id: string;
-  name: string;
-  company: string;
-  phone: string;
-  email: string;
-  products: string[];
-  address?: string;
-  notes?: string;
-}
+import { useOfflineSuppliers } from "@/hooks/useOfflineSuppliers";
 
 const Suppliers = () => {
   const { toast } = useToast();
+  const { suppliers, addSupplier, updateSupplier, deleteSupplier, isLoading } = useOfflineSuppliers();
   const [showHelp, setShowHelp] = useState(true);
-  const [suppliers, setSuppliers] = useState<Supplier[]>([
-    {
-      id: "demo-1",
-      name: "Example Supplier Contact",
-      company: "Demo Supplies Co.",
-      phone: "+1234567890",
-      email: "contact@demosupplies.com",
-      products: ["Product A", "Product B", "Product C"],
-      address: "123 Example Street, Demo City, DC 12345",
-      notes: "This is an example supplier. Click edit to see all fields, or delete to start fresh with your real suppliers.",
-    },
-  ]);
-
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
+  const [editingSupplier, setEditingSupplier] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: "",
-    company: "",
     phone: "",
     email: "",
-    products: "",
     address: "",
     notes: "",
   });
@@ -63,7 +39,6 @@ const Suppliers = () => {
   };
 
   const handleWhatsApp = (phone: string) => {
-    // Remove any non-digit characters except +
     const cleanPhone = phone.replace(/[^\d+]/g, "");
     window.open(`https://wa.me/${cleanPhone}`, "_blank");
   };
@@ -72,70 +47,84 @@ const Suppliers = () => {
     window.location.href = `mailto:${email}`;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const supplierData: Supplier = {
-      id: editingSupplier?.id || Date.now().toString(),
-      name: formData.name,
-      company: formData.company,
-      phone: formData.phone,
-      email: formData.email,
-      products: formData.products.split(",").map(p => p.trim()).filter(p => p),
-      address: formData.address || undefined,
-      notes: formData.notes || undefined,
-    };
+    try {
+      if (editingSupplier) {
+        await updateSupplier(editingSupplier, {
+          name: formData.name,
+          phone: formData.phone || undefined,
+          email: formData.email || undefined,
+          address: formData.address || undefined,
+          notes: formData.notes || undefined,
+        });
+        toast({
+          title: "Supplier updated",
+          description: `${formData.name} has been updated.`,
+        });
+      } else {
+        await addSupplier({
+          name: formData.name,
+          phone: formData.phone || undefined,
+          email: formData.email || undefined,
+          address: formData.address || undefined,
+          notes: formData.notes || undefined,
+        });
+        toast({
+          title: "Supplier added",
+          description: `${formData.name} has been added to your contacts.`,
+        });
+      }
 
-    if (editingSupplier) {
-      setSuppliers(suppliers.map(s => s.id === editingSupplier.id ? supplierData : s));
+      setFormData({ name: "", phone: "", email: "", address: "", notes: "" });
+      setEditingSupplier(null);
+      setIsDialogOpen(false);
+    } catch (error) {
       toast({
-        title: "Supplier updated",
-        description: `${supplierData.name} has been updated.`,
-      });
-    } else {
-      setSuppliers([...suppliers, supplierData]);
-      toast({
-        title: "Supplier added",
-        description: `${supplierData.name} has been added to your contacts.`,
+        title: "Error",
+        description: "Failed to save supplier.",
+        variant: "destructive",
       });
     }
-
-    setFormData({
-      name: "",
-      company: "",
-      phone: "",
-      email: "",
-      products: "",
-      address: "",
-      notes: "",
-    });
-    setEditingSupplier(null);
-    setIsDialogOpen(false);
   };
 
-  const handleEdit = (supplier: Supplier) => {
-    setEditingSupplier(supplier);
+  const handleEdit = (supplier: typeof suppliers[0]) => {
+    setEditingSupplier(supplier.id!);
     setFormData({
       name: supplier.name,
-      company: supplier.company,
-      phone: supplier.phone,
-      email: supplier.email,
-      products: supplier.products.join(", "),
+      phone: supplier.phone || "",
+      email: supplier.email || "",
       address: supplier.address || "",
       notes: supplier.notes || "",
     });
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    const supplier = suppliers.find(s => s.id === id);
-    setSuppliers(suppliers.filter(s => s.id !== id));
-    toast({
-      title: "Supplier deleted",
-      description: `${supplier?.name} has been removed.`,
-      variant: "destructive",
-    });
+  const handleDelete = async (id: string, name: string) => {
+    try {
+      await deleteSupplier(id);
+      toast({
+        title: "Supplier deleted",
+        description: `${name} has been removed.`,
+        variant: "destructive",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete supplier.",
+        variant: "destructive",
+      });
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-[calc(100vh-4rem)] bg-background flex items-center justify-center">
+        <Package className="h-12 w-12 animate-pulse text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-background pb-20 md:pb-6">
@@ -150,15 +139,7 @@ const Suppliers = () => {
             <DialogTrigger asChild>
               <Button className="gap-2" onClick={() => {
                 setEditingSupplier(null);
-                setFormData({
-                  name: "",
-                  company: "",
-                  phone: "",
-                  email: "",
-                  products: "",
-                  address: "",
-                  notes: "",
-                });
+                setFormData({ name: "", phone: "", email: "", address: "", notes: "" });
               }}>
                 <Plus className="h-5 w-5" />
                 Add Supplier
@@ -174,60 +155,37 @@ const Suppliers = () => {
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   <div className="grid gap-2">
-                    <Label htmlFor="name">Contact Name *</Label>
+                    <Label htmlFor="name">Supplier Name *</Label>
                     <Input
                       id="name"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      placeholder="John Smith"
-                      required
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="company">Company Name *</Label>
-                    <Input
-                      id="company"
-                      value={formData.company}
-                      onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                       placeholder="ABC Supplies Inc."
                       required
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="phone">Phone Number *</Label>
+                    <Label htmlFor="phone">Phone Number</Label>
                     <Input
                       id="phone"
                       type="tel"
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       placeholder="+1234567890"
-                      required
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="email">Email Address *</Label>
+                    <Label htmlFor="email">Email Address</Label>
                     <Input
                       id="email"
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       placeholder="contact@company.com"
-                      required
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="products">Products Supplied *</Label>
-                    <Input
-                      id="products"
-                      value={formData.products}
-                      onChange={(e) => setFormData({ ...formData, products: e.target.value })}
-                      placeholder="Product 1, Product 2, Product 3"
-                      required
-                    />
-                    <p className="text-xs text-muted-foreground">Separate multiple products with commas</p>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="address">Address (Optional)</Label>
+                    <Label htmlFor="address">Address</Label>
                     <LocationAutocomplete
                       id="address"
                       value={formData.address}
@@ -236,7 +194,7 @@ const Suppliers = () => {
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="notes">Notes (Optional)</Label>
+                    <Label htmlFor="notes">Notes</Label>
                     <Textarea
                       id="notes"
                       value={formData.notes}
@@ -254,15 +212,14 @@ const Suppliers = () => {
           </Dialog>
         </div>
 
-
         {/* Help Banner */}
-        {showHelp && suppliers.length > 0 && (
+        {showHelp && suppliers.length === 0 && (
           <Alert className="mb-6 bg-primary/5 border-primary/20">
             <Info className="h-4 w-4 text-primary" />
             <AlertDescription className="flex items-start justify-between gap-2">
               <div className="flex-1">
-                <strong className="block mb-1">Tutorial Mode</strong>
-                This is an example supplier contact to show you how supplier management works. You can call, WhatsApp, or email directly from here. Click 'Add Supplier' to add your real contacts.
+                <strong className="block mb-1">Get Started</strong>
+                Add your supplier contacts to easily reach them via call, WhatsApp, or email.
               </div>
               <Button
                 variant="ghost"
@@ -294,10 +251,17 @@ const Suppliers = () => {
                         <Building className="h-6 w-6 text-secondary" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-lg text-card-foreground">
-                          {supplier.name}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">{supplier.company}</p>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold text-lg text-card-foreground">
+                            {supplier.name}
+                          </h3>
+                          {!supplier.synced && (
+                            <Badge variant="outline" className="text-xs">Pending sync</Badge>
+                          )}
+                        </div>
+                        {supplier.email && (
+                          <p className="text-sm text-muted-foreground">{supplier.email}</p>
+                        )}
                       </div>
                     </div>
                     <div className="flex gap-1">
@@ -313,7 +277,7 @@ const Suppliers = () => {
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 text-destructive"
-                        onClick={() => handleDelete(supplier.id)}
+                        onClick={() => handleDelete(supplier.id!, supplier.name)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -322,32 +286,16 @@ const Suppliers = () => {
 
                   {/* Contact Info */}
                   <div className="space-y-2 mb-3">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Phone className="h-4 w-4" />
-                      <span>{supplier.phone}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Mail className="h-4 w-4" />
-                      <span className="truncate">{supplier.email}</span>
-                    </div>
+                    {supplier.phone && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Phone className="h-4 w-4" />
+                        <span>{supplier.phone}</span>
+                      </div>
+                    )}
+                    {supplier.address && (
+                      <p className="text-xs text-muted-foreground">{supplier.address}</p>
+                    )}
                   </div>
-
-                  {/* Products */}
-                  <div className="mb-3">
-                    <p className="text-xs text-muted-foreground mb-2">Supplies:</p>
-                    <div className="flex flex-wrap gap-1">
-                      {supplier.products.map((product, idx) => (
-                        <Badge key={idx} variant="secondary" className="text-xs">
-                          {product}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Address */}
-                  {supplier.address && (
-                    <p className="text-xs text-muted-foreground mb-3">{supplier.address}</p>
-                  )}
 
                   {/* Notes */}
                   {supplier.notes && (
@@ -356,28 +304,36 @@ const Suppliers = () => {
 
                   {/* Action Buttons */}
                   <div className="flex gap-2">
-                    <Button
-                      onClick={() => handleCall(supplier.phone)}
-                      className="flex-1 gap-2"
-                      variant="default"
-                    >
-                      <Phone className="h-4 w-4" />
-                      Call
-                    </Button>
-                    <Button
-                      onClick={() => handleWhatsApp(supplier.phone)}
-                      className="flex-1 gap-2 bg-success hover:bg-success/90"
-                    >
-                      <MessageCircle className="h-4 w-4" />
-                      WhatsApp
-                    </Button>
-                    <Button
-                      onClick={() => handleEmail(supplier.email)}
-                      variant="outline"
-                      size="icon"
-                    >
-                      <Mail className="h-4 w-4" />
-                    </Button>
+                    {supplier.phone && (
+                      <>
+                        <Button
+                          onClick={() => handleCall(supplier.phone!)}
+                          className="flex-1 gap-2"
+                          variant="default"
+                        >
+                          <Phone className="h-4 w-4" />
+                          Call
+                        </Button>
+                        <Button
+                          onClick={() => handleWhatsApp(supplier.phone!)}
+                          className="flex-1 gap-2 bg-success hover:bg-success/90"
+                        >
+                          <MessageCircle className="h-4 w-4" />
+                          WhatsApp
+                        </Button>
+                      </>
+                    )}
+                    {supplier.email && (
+                      <Button
+                        onClick={() => handleEmail(supplier.email!)}
+                        variant="outline"
+                        size={supplier.phone ? "icon" : "default"}
+                        className={supplier.phone ? "" : "flex-1 gap-2"}
+                      >
+                        <Mail className="h-4 w-4" />
+                        {!supplier.phone && "Email"}
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>
