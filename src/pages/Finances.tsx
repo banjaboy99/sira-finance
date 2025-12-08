@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { DollarSign, TrendingDown, PieChart, Plus, Trash2, Calendar, Cloud } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { DollarSign, TrendingDown, PieChart, Plus, Trash2, Calendar, Cloud, AlertTriangle, Bell } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -164,17 +164,117 @@ const Finances = () => {
     const spent = calculateCategorySpending(category);
     const percentage = (spent / budget) * 100;
 
-    if (percentage >= 100) return { color: "bg-destructive/10 text-destructive border-destructive/20", status: "Over Budget" };
-    if (percentage >= 80) return { color: "bg-warning/10 text-warning border-warning/20", status: "Warning" };
-    return { color: "bg-success/10 text-success border-success/20", status: "On Track" };
+    if (percentage >= 100) return { color: "bg-destructive/10 text-destructive border-destructive/20", status: "Over Budget", percentage };
+    if (percentage >= 80) return { color: "bg-warning/10 text-warning border-warning/20", status: "Warning", percentage };
+    return { color: "bg-success/10 text-success border-success/20", status: "On Track", percentage };
   };
 
+  // Calculate budget alerts
+  const getBudgetAlerts = () => {
+    return budgets
+      .map((budget) => {
+        const spent = calculateCategorySpending(budget.category);
+        const percentage = (spent / budget.amount) * 100;
+        const remaining = budget.amount - spent;
+        
+        if (percentage >= 100) {
+          return {
+            id: budget.id,
+            category: budget.category,
+            type: 'exceeded' as const,
+            message: `Over budget by $${Math.abs(remaining).toFixed(2)}`,
+            percentage,
+          };
+        } else if (percentage >= 80) {
+          return {
+            id: budget.id,
+            category: budget.category,
+            type: 'warning' as const,
+            message: `${percentage.toFixed(0)}% spent - $${remaining.toFixed(2)} remaining`,
+            percentage,
+          };
+        }
+        return null;
+      })
+      .filter(Boolean) as Array<{
+        id: string;
+        category: string;
+        type: 'exceeded' | 'warning';
+        message: string;
+        percentage: number;
+      }>;
+  };
+
+  const budgetAlerts = getBudgetAlerts();
+  const notifiedAlertsRef = useRef<Set<string>>(new Set());
   const isLoading = budgetsLoading || expensesLoading;
+
+  // Show toast notifications for budget alerts
+  useEffect(() => {
+    if (isLoading) return;
+    
+    budgetAlerts.forEach((alert) => {
+      const alertKey = `${alert.id}-${alert.type}`;
+      
+      // Only notify once per alert type per budget
+      if (!notifiedAlertsRef.current.has(alertKey)) {
+        notifiedAlertsRef.current.add(alertKey);
+        
+        if (alert.type === 'exceeded') {
+          toast({
+            title: `🚨 Budget Exceeded: ${alert.category}`,
+            description: alert.message,
+            variant: "destructive",
+          });
+        } else if (alert.type === 'warning') {
+          toast({
+            title: `⚠️ Budget Warning: ${alert.category}`,
+            description: alert.message,
+          });
+        }
+      }
+    });
+  }, [budgetAlerts, isLoading, toast]);
 
   return (
     <div className="min-h-screen bg-background">
       <BackButton title="Finances" subtitle="Track budgets and expenses for your business" to="/" />
       <div className="container mx-auto px-4 py-6 pb-20 md:pb-6">
+
+        {/* Budget Alerts Banner */}
+        {budgetAlerts.length > 0 && (
+          <Card className="mb-6 border-warning/50 bg-warning/5">
+            <CardContent className="pt-4 pb-4">
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-full bg-warning/20">
+                  <Bell className="h-5 w-5 text-warning" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-foreground flex items-center gap-2">
+                    Budget Alerts
+                    <Badge variant="secondary" className="text-xs">
+                      {budgetAlerts.length}
+                    </Badge>
+                  </h3>
+                  <div className="mt-2 space-y-2">
+                    {budgetAlerts.map((alert) => (
+                      <div 
+                        key={alert.id} 
+                        className={`flex items-center gap-2 text-sm ${
+                          alert.type === 'exceeded' ? 'text-destructive' : 'text-warning'
+                        }`}
+                      >
+                        <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+                        <span className="font-medium">{alert.category}:</span>
+                        <span>{alert.message}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
