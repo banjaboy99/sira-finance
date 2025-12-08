@@ -4,18 +4,40 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { Globe, Bell, Shield, Download, Trash2, Moon } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Globe, Bell, Shield, Download, Trash2, Moon, Coins, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { CURRENCIES, CurrencyCode } from "@/lib/currencies";
 import { BackButton } from "@/components/BackButton";
+import { format } from "date-fns";
 
 const Settings = () => {
   const { toast } = useToast();
   const { theme, toggleTheme } = useTheme();
+  const { 
+    baseCurrency, 
+    displayCurrency, 
+    setBaseCurrency, 
+    setDisplayCurrency, 
+    rates, 
+    lastUpdated, 
+    isLoading: ratesLoading, 
+    refreshRates 
+  } = useCurrency();
   const [language, setLanguage] = useState("en");
   const [notifications, setNotifications] = useState(true);
   const [lowStockAlerts, setLowStockAlerts] = useState(true);
   const [invoiceReminders, setInvoiceReminders] = useState(true);
+
+  const handleRefreshRates = async () => {
+    await refreshRates();
+    toast({
+      title: "Rates updated",
+      description: "Exchange rates have been refreshed",
+    });
+  };
 
   const handleExport = () => {
     toast({
@@ -64,6 +86,102 @@ const Settings = () => {
                     <SelectItem value="fr">French</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Currency Settings */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Coins className="h-5 w-5 text-primary" />
+                <CardTitle>Currency</CardTitle>
+              </div>
+              <CardDescription>
+                Set your base currency and view amounts in different currencies
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Base Currency</label>
+                <p className="text-xs text-muted-foreground">
+                  The currency you record transactions in
+                </p>
+                <Select 
+                  value={baseCurrency} 
+                  onValueChange={(value) => setBaseCurrency(value as CurrencyCode)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(CURRENCIES).map(([code, currency]) => (
+                      <SelectItem key={code} value={code}>
+                        <span className="flex items-center gap-2">
+                          <span className="font-medium">{currency.symbol}</span>
+                          <span>{currency.name}</span>
+                          <span className="text-muted-foreground">({code})</span>
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <Separator />
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Display Currency</label>
+                <p className="text-xs text-muted-foreground">
+                  View all amounts converted to this currency
+                </p>
+                <Select 
+                  value={displayCurrency} 
+                  onValueChange={(value) => setDisplayCurrency(value as CurrencyCode)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(CURRENCIES).map(([code, currency]) => (
+                      <SelectItem key={code} value={code}>
+                        <span className="flex items-center gap-2">
+                          <span className="font-medium">{currency.symbol}</span>
+                          <span>{currency.name}</span>
+                          <span className="text-muted-foreground">({code})</span>
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <Separator />
+              
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">Exchange Rates</p>
+                  <p className="text-sm text-muted-foreground">
+                    {lastUpdated 
+                      ? `Last updated: ${format(lastUpdated, 'MMM d, h:mm a')}`
+                      : 'Not yet loaded'
+                    }
+                  </p>
+                  {Object.keys(rates).length > 0 && baseCurrency !== 'USD' && (
+                    <Badge variant="outline" className="mt-1">
+                      1 USD = {rates[baseCurrency]?.toFixed(2)} {baseCurrency}
+                    </Badge>
+                  )}
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleRefreshRates}
+                  disabled={ratesLoading}
+                >
+                  <RefreshCw className={`h-4 w-4 mr-2 ${ratesLoading ? 'animate-spin' : ''}`} />
+                  Refresh
+                </Button>
               </div>
             </CardContent>
           </Card>
