@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -6,7 +6,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Globe } from "lucide-react";
 
 interface Language {
   code: string;
@@ -19,23 +18,24 @@ const languages: Language[] = [
   { code: "yo", name: "Yoruba", flag: "🇳🇬" },
   { code: "ig", name: "Igbo", flag: "🇳🇬" },
   { code: "ha", name: "Hausa", flag: "🇳🇬" },
-  { code: "fr", name: "French", flag: "🇫🇷" },
+  { code: "fr", name: "Français", flag: "🇫🇷" },
 ];
 
 export const LanguageSelector = () => {
-  const [selectedLanguage, setSelectedLanguage] = useState(languages[0]);
+  const { i18n } = useTranslation();
+  
+  const currentLanguage = languages.find(l => l.code === i18n.language) || languages[0];
 
   const handleLanguageChange = (language: Language) => {
-    setSelectedLanguage(language);
+    i18n.changeLanguage(language.code);
     localStorage.setItem("language", language.code);
-    // TODO: Implement actual language switching logic
   };
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full">
-          <span className="text-2xl">{selectedLanguage.flag}</span>
+          <span className="text-2xl">{currentLanguage.flag}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48 bg-card z-50">
