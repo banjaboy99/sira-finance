@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { CurrencyProvider } from "./contexts/CurrencyContext";
 import { Navigation } from "./components/Navigation";
 import { QuickActionsMenu } from "./components/QuickActionsMenu";
 import { HelpChat } from "./components/HelpChat";
@@ -37,7 +38,8 @@ const App = () => {
           <Sonner />
           <BrowserRouter>
             <AuthProvider>
-              <div className="flex flex-col min-h-screen">
+              <CurrencyProvider>
+                <div className="flex flex-col min-h-screen">
                 <Navigation onQuickActionsClick={() => setIsQuickActionsOpen(true)} />
                 <QuickActionsMenu isOpen={isQuickActionsOpen} onOpenChange={setIsQuickActionsOpen} />
                 <main className="flex-1">
@@ -58,8 +60,9 @@ const App = () => {
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </main>
-                <HelpChat />
-              </div>
+                  <HelpChat />
+                </div>
+              </CurrencyProvider>
             </AuthProvider>
           </BrowserRouter>
         </TooltipProvider>

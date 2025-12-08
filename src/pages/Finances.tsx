@@ -28,6 +28,7 @@ import { BackButton } from "@/components/BackButton";
 import { useOfflineBudgets } from "@/hooks/useOfflineBudgets";
 import { useOfflineExpenses } from "@/hooks/useOfflineExpenses";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 const CATEGORIES = [
   "Inventory",
@@ -45,6 +46,7 @@ const CATEGORIES = [
 
 const Finances = () => {
   const { toast } = useToast();
+  const { format: formatMoney } = useCurrency();
   const { budgets, addBudget, deleteBudget, isLoading: budgetsLoading } = useOfflineBudgets();
   const { expenses, addExpense, deleteExpense, isLoading: expensesLoading } = useOfflineExpenses();
 
@@ -117,7 +119,7 @@ const Finances = () => {
 
     toast({
       title: "Expense added",
-      description: `$${parseFloat(expenseForm.amount).toFixed(2)} expense recorded`,
+      description: `${formatMoney(parseFloat(expenseForm.amount))} expense recorded`,
     });
 
     setExpenseForm({
@@ -182,7 +184,7 @@ const Finances = () => {
             id: budget.id,
             category: budget.category,
             type: 'exceeded' as const,
-            message: `Over budget by $${Math.abs(remaining).toFixed(2)}`,
+            message: `Over budget by ${formatMoney(Math.abs(remaining))}`,
             percentage,
           };
         } else if (percentage >= 80) {
@@ -190,7 +192,7 @@ const Finances = () => {
             id: budget.id,
             category: budget.category,
             type: 'warning' as const,
-            message: `${percentage.toFixed(0)}% spent - $${remaining.toFixed(2)} remaining`,
+            message: `${percentage.toFixed(0)}% spent - ${formatMoney(remaining)} remaining`,
             percentage,
           };
         }
@@ -291,7 +293,7 @@ const Finances = () => {
               ) : (
                 <>
                   <div className="text-2xl font-bold text-foreground">
-                    ${calculateTotalBudget().toFixed(2)}
+                    {formatMoney(calculateTotalBudget())}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
                     {budgets.length} categories
@@ -314,7 +316,7 @@ const Finances = () => {
               ) : (
                 <>
                   <div className="text-2xl font-bold text-foreground">
-                    ${calculateTotalSpending().toFixed(2)}
+                    {formatMoney(calculateTotalSpending())}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
                     {expenses.length} expenses
@@ -337,7 +339,7 @@ const Finances = () => {
               ) : (
                 <>
                   <div className="text-2xl font-bold text-foreground">
-                    ${(calculateTotalBudget() - calculateTotalSpending()).toFixed(2)}
+                    {formatMoney(calculateTotalBudget() - calculateTotalSpending())}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
                     {calculateTotalBudget() > 0 
@@ -491,7 +493,7 @@ const Finances = () => {
                         <div className="space-y-2">
                           <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground">
-                              ${spent.toFixed(2)} spent of ${budget.amount.toFixed(2)}
+                              {formatMoney(spent)} spent of {formatMoney(budget.amount)}
                             </span>
                             <span className="font-medium text-foreground">
                               {percentage.toFixed(0)}%
@@ -654,7 +656,7 @@ const Finances = () => {
                               {expense.date}
                             </span>
                             <span className="text-lg font-bold text-foreground">
-                              ${expense.amount.toFixed(2)}
+                              {formatMoney(expense.amount)}
                             </span>
                           </div>
                         </div>
@@ -708,7 +710,7 @@ const Finances = () => {
                             <div className="flex justify-between text-sm mb-2">
                               <span className="font-medium text-foreground">{category}</span>
                               <span className="text-muted-foreground">
-                                ${spent.toFixed(2)} ({percentage.toFixed(1)}%)
+                                {formatMoney(spent)} ({percentage.toFixed(1)}%)
                               </span>
                             </div>
                             <div className="w-full bg-muted rounded-full h-2">
@@ -755,10 +757,10 @@ const Finances = () => {
                             </div>
                             <div className="text-right">
                               <p className="font-semibold text-foreground">
-                                ${spent.toFixed(2)} / ${budget.amount.toFixed(2)}
+                                {formatMoney(spent)} / {formatMoney(budget.amount)}
                               </p>
                               <p className={`text-sm ${difference >= 0 ? "text-success" : "text-destructive"}`}>
-                                {difference >= 0 ? "+" : ""}${difference.toFixed(2)}
+                                {difference >= 0 ? "+" : "-"}{formatMoney(Math.abs(difference))}
                               </p>
                             </div>
                           </div>
