@@ -1,31 +1,77 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { TrendingUp, TrendingDown, DollarSign, Package, FileText } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BackButton } from "@/components/BackButton";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useOfflineInvoices } from "@/hooks/useOfflineInvoices";
+import { useOfflineExpenses } from "@/hooks/useOfflineExpenses";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { useTranslation } from "react-i18next";
+import { startOfWeek, startOfMonth, startOfQuarter, startOfYear, isAfter } from "date-fns";
 
 const Reports = () => {
+  const { t } = useTranslation();
+  const { format } = useCurrency();
   const [selectedPeriod, setSelectedPeriod] = useState("month");
+  
+  const { invoices, isLoading: invoicesLoading } = useOfflineInvoices();
+  const { expenses, isLoading: expensesLoading } = useOfflineExpenses();
 
-  const stats = {
-    revenue: 450000,
-    expenses: 180000,
-    profit: 270000,
-    invoices: 24,
-    growth: 15.3,
-  };
+  // Calculate period start date
+  const periodStart = useMemo(() => {
+    const now = new Date();
+    switch (selectedPeriod) {
+      case "week":
+        return startOfWeek(now);
+      case "month":
+        return startOfMonth(now);
+      case "quarter":
+        return startOfQuarter(now);
+      case "year":
+        return startOfYear(now);
+      default:
+        return startOfMonth(now);
+    }
+  }, [selectedPeriod]);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: 'NGN',
-    }).format(amount);
-  };
+  // Filter data by period
+  const filteredInvoices = useMemo(() => {
+    return invoices.filter(inv => {
+      const invDate = new Date(inv.created_at || inv.updated_at || Date.now());
+      return isAfter(invDate, periodStart);
+    });
+  }, [invoices, periodStart]);
+
+  const filteredExpenses = useMemo(() => {
+    return expenses.filter(exp => {
+      const expDate = new Date(exp.date || exp.created_at || Date.now());
+      return isAfter(expDate, periodStart);
+    });
+  }, [expenses, periodStart]);
+
+  // Calculate real stats
+  const stats = useMemo(() => {
+    const paidInvoices = filteredInvoices.filter(inv => inv.status === "paid");
+    const revenue = paidInvoices.reduce((sum, inv) => sum + (inv.total || 0), 0);
+    const totalExpenses = filteredExpenses.reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
+    const profit = revenue - totalExpenses;
+    const invoiceCount = filteredInvoices.length;
+
+    return {
+      revenue,
+      expenses: totalExpenses,
+      profit,
+      invoices: invoiceCount,
+      growth: 0, // Would need historical data to calculate
+    };
+  }, [filteredInvoices, filteredExpenses]);
+
+  const isLoading = invoicesLoading || expensesLoading;
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-6xl">
-      <BackButton title="Reports" subtitle="Business performance overview" />
+      <BackButton title={t('nav.reports')} subtitle={t('reports.subtitle')} />
       
       <div className="mb-6">
       </div>
@@ -38,16 +84,16 @@ const Reports = () => {
             size="sm"
             onClick={() => setSelectedPeriod(period)}
           >
-            {period.charAt(0).toUpperCase() + period.slice(1)}
+            {t(`reports.${period}`)}
           </Button>
         ))}
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6">
         <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="sales">Sales</TabsTrigger>
-          <TabsTrigger value="expenses">Expenses</TabsTrigger>
+          <TabsTrigger value="overview">{t('reports.overview')}</TabsTrigger>
+          <TabsTrigger value="sales">{t('reports.sales')}</TabsTrigger>
+          <TabsTrigger value="expenses">{t('nav.expenses')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -56,14 +102,15 @@ const Reports = () => {
               <CardHeader className="pb-3">
                 <CardDescription className="flex items-center gap-2">
                   <TrendingUp className="h-4 w-4 text-success" />
-                  Revenue
+                  {t('reports.revenue')}
                 </CardDescription>
-                <CardTitle className="text-2xl">{formatCurrency(stats.revenue)}</CardTitle>
+                <CardTitle className="text-2xl">
+                  {isLoading ? "..." : format(stats.revenue)}
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center gap-2 text-sm text-success">
-                  <TrendingUp className="h-4 w-4" />
-                  <span>+{stats.growth}% from last {selectedPeriod}</span>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span>{t('reports.paidInvoices')}</span>
                 </div>
               </CardContent>
             </Card>
@@ -72,13 +119,18 @@ const Reports = () => {
               <CardHeader className="pb-3">
                 <CardDescription className="flex items-center gap-2">
                   <TrendingDown className="h-4 w-4 text-error" />
-                  Expenses
+                  {t('nav.expenses')}
                 </CardDescription>
-                <CardTitle className="text-2xl">{formatCurrency(stats.expenses)}</CardTitle>
+                <CardTitle className="text-2xl">
+                  {isLoading ? "..." : format(stats.expenses)}
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  {((stats.expenses / stats.revenue) * 100).toFixed(1)}% of revenue
+                  {stats.revenue > 0 
+                    ? `${((stats.expenses / stats.revenue) * 100).toFixed(1)}% ${t('reports.ofRevenue')}`
+                    : t('reports.noRevenue')
+                  }
                 </p>
               </CardContent>
             </Card>
@@ -87,13 +139,18 @@ const Reports = () => {
               <CardHeader className="pb-3">
                 <CardDescription className="flex items-center gap-2">
                   <DollarSign className="h-4 w-4 text-primary" />
-                  Net Profit
+                  {t('reports.netProfit')}
                 </CardDescription>
-                <CardTitle className="text-2xl">{formatCurrency(stats.profit)}</CardTitle>
+                <CardTitle className={`text-2xl ${stats.profit < 0 ? 'text-error' : ''}`}>
+                  {isLoading ? "..." : format(stats.profit)}
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  {((stats.profit / stats.revenue) * 100).toFixed(1)}% margin
+                  {stats.revenue > 0 
+                    ? `${((stats.profit / stats.revenue) * 100).toFixed(1)}% ${t('reports.margin')}`
+                    : t('reports.noData')
+                  }
                 </p>
               </CardContent>
             </Card>
@@ -102,13 +159,15 @@ const Reports = () => {
               <CardHeader className="pb-3">
                 <CardDescription className="flex items-center gap-2">
                   <FileText className="h-4 w-4 text-accent" />
-                  Invoices
+                  {t('nav.invoices')}
                 </CardDescription>
-                <CardTitle className="text-2xl">{stats.invoices}</CardTitle>
+                <CardTitle className="text-2xl">
+                  {isLoading ? "..." : stats.invoices}
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  This {selectedPeriod}
+                  {t('reports.thisPeriod', { period: t(`reports.${selectedPeriod}`) })}
                 </p>
               </CardContent>
             </Card>
@@ -116,22 +175,28 @@ const Reports = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle>Profit & Loss Statement</CardTitle>
-              <CardDescription>For the selected {selectedPeriod}</CardDescription>
+              <CardTitle>{t('reports.profitLoss')}</CardTitle>
+              <CardDescription>{t('reports.forSelected', { period: t(`reports.${selectedPeriod}`) })}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="flex justify-between items-center pb-3 border-b">
-                  <span className="font-medium">Total Revenue</span>
-                  <span className="text-success font-semibold">{formatCurrency(stats.revenue)}</span>
+                  <span className="font-medium">{t('reports.totalRevenue')}</span>
+                  <span className="text-success font-semibold">
+                    {isLoading ? "..." : format(stats.revenue)}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center pb-3 border-b">
-                  <span className="font-medium">Total Expenses</span>
-                  <span className="text-error font-semibold">-{formatCurrency(stats.expenses)}</span>
+                  <span className="font-medium">{t('reports.totalExpenses')}</span>
+                  <span className="text-error font-semibold">
+                    -{isLoading ? "..." : format(stats.expenses)}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center pt-3">
-                  <span className="text-lg font-bold">Net Profit</span>
-                  <span className="text-lg font-bold text-primary">{formatCurrency(stats.profit)}</span>
+                  <span className="text-lg font-bold">{t('reports.netProfit')}</span>
+                  <span className={`text-lg font-bold ${stats.profit < 0 ? 'text-error' : 'text-primary'}`}>
+                    {isLoading ? "..." : format(stats.profit)}
+                  </span>
                 </div>
               </div>
             </CardContent>
@@ -141,8 +206,8 @@ const Reports = () => {
         <TabsContent value="sales">
           <Card>
             <CardHeader>
-              <CardTitle>Sales Analytics</CardTitle>
-              <CardDescription>Coming soon</CardDescription>
+              <CardTitle>{t('reports.salesAnalytics')}</CardTitle>
+              <CardDescription>{t('common.comingSoon')}</CardDescription>
             </CardHeader>
           </Card>
         </TabsContent>
@@ -150,8 +215,8 @@ const Reports = () => {
         <TabsContent value="expenses">
           <Card>
             <CardHeader>
-              <CardTitle>Expense Breakdown</CardTitle>
-              <CardDescription>Coming soon</CardDescription>
+              <CardTitle>{t('reports.expenseBreakdown')}</CardTitle>
+              <CardDescription>{t('common.comingSoon')}</CardDescription>
             </CardHeader>
           </Card>
         </TabsContent>
