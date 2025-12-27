@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Search, Mail, Phone, MapPin, Edit, Trash2, UserCheck, Building, Package } from "lucide-react";
+import { Plus, Search, Mail, Phone, MapPin, Edit, Trash2, UserCheck, Building, Package, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +7,7 @@ import { BackButton } from "@/components/BackButton";
 import { Badge } from "@/components/ui/badge";
 import { useOfflineClients } from "@/hooks/useOfflineClients";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogContent,
@@ -21,6 +22,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { LocationAutocomplete } from "@/components/LocationAutocomplete";
 
 const Clients = () => {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const { clients, addClient, updateClient, deleteClient, isLoading } = useOfflineClients();
   const [searchQuery, setSearchQuery] = useState("");
@@ -55,8 +57,8 @@ const Clients = () => {
           notes: formData.notes || undefined,
         });
         toast({
-          title: "Client updated",
-          description: `${formData.name} has been updated.`,
+          title: t('clients.updated'),
+          description: `${formData.name} ${t('clients.hasBeenUpdated')}`,
         });
       } else {
         await addClient({
@@ -68,8 +70,8 @@ const Clients = () => {
           notes: formData.notes || undefined,
         });
         toast({
-          title: "Client added",
-          description: `${formData.name} has been added.`,
+          title: t('clients.added'),
+          description: `${formData.name} ${t('clients.hasBeenAdded')}`,
         });
       }
 
@@ -78,8 +80,8 @@ const Clients = () => {
       setIsDialogOpen(false);
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to save client.",
+        title: t('common.error'),
+        description: t('clients.saveFailed'),
         variant: "destructive",
       });
     }
@@ -102,17 +104,31 @@ const Clients = () => {
     try {
       await deleteClient(id);
       toast({
-        title: "Client deleted",
-        description: `${name} has been removed.`,
+        title: t('clients.deleted'),
+        description: `${name} ${t('clients.hasBeenRemoved')}`,
         variant: "destructive",
       });
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to delete client.",
+        title: t('common.error'),
+        description: t('clients.deleteFailed'),
         variant: "destructive",
       });
     }
+  };
+
+  const handleWhatsApp = (phone: string) => {
+    // Remove non-numeric characters except +
+    const cleanPhone = phone.replace(/[^\d+]/g, '');
+    window.open(`https://wa.me/${cleanPhone}`, '_blank');
+  };
+
+  const handleCall = (phone: string) => {
+    window.location.href = `tel:${phone}`;
+  };
+
+  const handleEmail = (email: string) => {
+    window.location.href = `mailto:${email}`;
   };
 
   if (isLoading) {
@@ -125,7 +141,7 @@ const Clients = () => {
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-6xl pb-24">
-      <BackButton title="Clients" subtitle="Manage your client relationships" />
+      <BackButton title={t('nav.clients')} subtitle={t('clients.subtitle')} />
       
       <div className="flex items-center justify-between mb-6">
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -135,20 +151,20 @@ const Clients = () => {
               setFormData({ name: "", company: "", phone: "", email: "", address: "", notes: "" });
             }}>
               <Plus className="mr-2 h-4 w-4" />
-              Add Client
+              {t('clients.addClient')}
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
             <form onSubmit={handleSubmit}>
               <DialogHeader>
-                <DialogTitle>{editingClient ? "Edit Client" : "Add New Client"}</DialogTitle>
+                <DialogTitle>{editingClient ? t('clients.editClient') : t('clients.addClient')}</DialogTitle>
                 <DialogDescription>
-                  {editingClient ? "Update client details" : "Add a new client to your list"}
+                  {editingClient ? t('clients.editClientDesc') : t('clients.addClientDesc')}
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="name">Client Name *</Label>
+                  <Label htmlFor="name">{t('clients.clientName')} *</Label>
                   <Input
                     id="name"
                     value={formData.name}
@@ -158,7 +174,7 @@ const Clients = () => {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="company">Company</Label>
+                  <Label htmlFor="company">{t('clients.company')}</Label>
                   <Input
                     id="company"
                     value={formData.company}
@@ -167,7 +183,7 @@ const Clients = () => {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="phone">Phone Number</Label>
+                  <Label htmlFor="phone">{t('clients.phone')}</Label>
                   <Input
                     id="phone"
                     type="tel"
@@ -177,7 +193,7 @@ const Clients = () => {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="email">Email Address</Label>
+                  <Label htmlFor="email">{t('clients.email')}</Label>
                   <Input
                     id="email"
                     type="email"
@@ -187,27 +203,27 @@ const Clients = () => {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="address">Address</Label>
+                  <Label htmlFor="address">{t('clients.address')}</Label>
                   <LocationAutocomplete
                     id="address"
                     value={formData.address}
                     onChange={(value) => setFormData({ ...formData, address: value })}
-                    placeholder="Start typing an address..."
+                    placeholder={t('clients.addressPlaceholder')}
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="notes">Notes</Label>
+                  <Label htmlFor="notes">{t('common.notes')}</Label>
                   <Textarea
                     id="notes"
                     value={formData.notes}
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    placeholder="Additional notes about this client..."
+                    placeholder={t('clients.notesPlaceholder')}
                     rows={3}
                   />
                 </div>
               </div>
               <DialogFooter>
-                <Button type="submit">{editingClient ? "Update Client" : "Add Client"}</Button>
+                <Button type="submit">{editingClient ? t('clients.updateClient') : t('clients.addClient')}</Button>
               </DialogFooter>
             </form>
           </DialogContent>
@@ -218,7 +234,7 @@ const Clients = () => {
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
-            placeholder="Search clients..."
+            placeholder={t('clients.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
@@ -230,10 +246,10 @@ const Clients = () => {
         <div className="text-center py-12">
           <UserCheck className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-semibold mb-2">
-            {searchQuery ? "No clients found" : "No clients yet"}
+            {searchQuery ? t('clients.noClientsFound') : t('clients.noClients')}
           </h3>
           <p className="text-muted-foreground">
-            {searchQuery ? "Try a different search" : "Add your first client to get started"}
+            {searchQuery ? t('clients.tryDifferentSearch') : t('clients.addFirstClient')}
           </p>
         </div>
       ) : (
@@ -250,7 +266,7 @@ const Clients = () => {
                       <div className="flex items-center gap-2">
                         <CardTitle className="text-lg">{client.name}</CardTitle>
                         {!client.synced && (
-                          <Badge variant="outline" className="text-xs">Pending sync</Badge>
+                          <Badge variant="outline" className="text-xs">{t('common.pendingSync')}</Badge>
                         )}
                       </div>
                       {client.company && (
@@ -284,15 +300,48 @@ const Clients = () => {
               <CardContent>
                 <div className="space-y-2 text-sm">
                   {client.email && (
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Mail className="h-4 w-4" />
-                      {client.email}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Mail className="h-4 w-4" />
+                        {client.email}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-2"
+                        onClick={() => handleEmail(client.email!)}
+                      >
+                        <Mail className="h-4 w-4 mr-1" />
+                        {t('clients.sendEmail')}
+                      </Button>
                     </div>
                   )}
                   {client.phone && (
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Phone className="h-4 w-4" />
-                      {client.phone}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Phone className="h-4 w-4" />
+                        {client.phone}
+                      </div>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 px-2"
+                          onClick={() => handleCall(client.phone!)}
+                        >
+                          <Phone className="h-4 w-4 mr-1" />
+                          {t('clients.call')}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 px-2 text-green-600 hover:text-green-700 hover:bg-green-50"
+                          onClick={() => handleWhatsApp(client.phone!)}
+                        >
+                          <MessageCircle className="h-4 w-4 mr-1" />
+                          WhatsApp
+                        </Button>
+                      </div>
                     </div>
                   )}
                   {client.address && (

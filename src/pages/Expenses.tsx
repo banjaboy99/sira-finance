@@ -6,6 +6,8 @@ import { BackButton } from "@/components/BackButton";
 import { Badge } from "@/components/ui/badge";
 import { useOfflineExpenses } from "@/hooks/useOfflineExpenses";
 import { useToast } from "@/hooks/use-toast";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogContent,
@@ -40,7 +42,9 @@ const EXPENSE_CATEGORIES = [
 ];
 
 const Expenses = () => {
+  const { t } = useTranslation();
   const { toast } = useToast();
+  const { format } = useCurrency();
   const { expenses, addExpense, updateExpense, deleteExpense, isLoading } = useOfflineExpenses();
   const [selectedPeriod, setSelectedPeriod] = useState("month");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -54,13 +58,6 @@ const Expenses = () => {
 
   const totalExpenses = expenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: 'NGN',
-    }).format(amount);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -73,8 +70,8 @@ const Expenses = () => {
           date: formData.date,
         });
         toast({
-          title: "Expense updated",
-          description: "Your expense has been updated.",
+          title: t('expenses.updated'),
+          description: t('expenses.updatedDesc'),
         });
       } else {
         await addExpense({
@@ -84,8 +81,8 @@ const Expenses = () => {
           date: formData.date,
         });
         toast({
-          title: "Expense added",
-          description: "Your expense has been recorded.",
+          title: t('expenses.added'),
+          description: t('expenses.addedDesc'),
         });
       }
       
@@ -94,8 +91,8 @@ const Expenses = () => {
       setIsDialogOpen(false);
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to save expense.",
+        title: t('common.error'),
+        description: t('expenses.saveFailed'),
         variant: "destructive",
       });
     }
@@ -116,14 +113,14 @@ const Expenses = () => {
     try {
       await deleteExpense(id);
       toast({
-        title: "Expense deleted",
-        description: "The expense has been removed.",
+        title: t('expenses.deleted'),
+        description: t('expenses.deletedDesc'),
         variant: "destructive",
       });
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to delete expense.",
+        title: t('common.error'),
+        description: t('expenses.deleteFailed'),
         variant: "destructive",
       });
     }
@@ -139,7 +136,7 @@ const Expenses = () => {
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-6xl pb-24">
-      <BackButton title="Expenses" subtitle="Track your business expenses" />
+      <BackButton title={t('nav.expenses')} subtitle={t('expenses.subtitle')} />
       
       <div className="flex items-center justify-between mb-6">
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -149,20 +146,20 @@ const Expenses = () => {
               setFormData({ amount: "", category: "", description: "", date: new Date().toISOString().split('T')[0] });
             }}>
               <Plus className="mr-2 h-4 w-4" />
-              Add Expense
+              {t('expenses.addExpense')}
             </Button>
           </DialogTrigger>
           <DialogContent>
             <form onSubmit={handleSubmit}>
               <DialogHeader>
-                <DialogTitle>{editingExpense ? "Edit Expense" : "Add Expense"}</DialogTitle>
+                <DialogTitle>{editingExpense ? t('expenses.editExpense') : t('expenses.addExpense')}</DialogTitle>
                 <DialogDescription>
-                  {editingExpense ? "Update expense details" : "Record a new business expense"}
+                  {editingExpense ? t('expenses.editExpenseDesc') : t('expenses.addExpenseDesc')}
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="amount">Amount *</Label>
+                  <Label htmlFor="amount">{t('common.amount')} *</Label>
                   <Input
                     id="amount"
                     type="number"
@@ -174,13 +171,13 @@ const Expenses = () => {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="category">Category *</Label>
+                  <Label htmlFor="category">{t('common.category')} *</Label>
                   <Select
                     value={formData.category}
                     onValueChange={(value) => setFormData({ ...formData, category: value })}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
+                      <SelectValue placeholder={t('expenses.selectCategory')} />
                     </SelectTrigger>
                     <SelectContent>
                       {EXPENSE_CATEGORIES.map((cat) => (
@@ -190,7 +187,7 @@ const Expenses = () => {
                   </Select>
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="date">Date *</Label>
+                  <Label htmlFor="date">{t('common.date')} *</Label>
                   <Input
                     id="date"
                     type="date"
@@ -200,18 +197,18 @@ const Expenses = () => {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="description">Description</Label>
+                  <Label htmlFor="description">{t('common.description')}</Label>
                   <Textarea
                     id="description"
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="What was this expense for?"
+                    placeholder={t('expenses.descriptionPlaceholder')}
                     rows={2}
                   />
                 </div>
               </div>
               <DialogFooter>
-                <Button type="submit">{editingExpense ? "Update" : "Add"} Expense</Button>
+                <Button type="submit">{editingExpense ? t('common.update') : t('common.add')} {t('nav.expenses')}</Button>
               </DialogFooter>
             </form>
           </DialogContent>
@@ -221,45 +218,45 @@ const Expenses = () => {
       <div className="grid gap-6 md:grid-cols-3 mb-6">
         <Card>
           <CardHeader className="pb-3">
-            <CardDescription>Total This Month</CardDescription>
-            <CardTitle className="text-2xl">{formatCurrency(totalExpenses)}</CardTitle>
+            <CardDescription>{t('expenses.totalThisMonth')}</CardDescription>
+            <CardTitle className="text-2xl">{format(totalExpenses)}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <TrendingDown className="h-4 w-4 text-error" />
-              <span>{expenses.length} expenses recorded</span>
+              <span>{expenses.length} {t('expenses.recorded')}</span>
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-3">
-            <CardDescription>Categories</CardDescription>
+            <CardDescription>{t('expenses.categories')}</CardDescription>
             <CardTitle className="text-2xl">
               {new Set(expenses.map(e => e.category)).size}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">Expense types tracked</p>
+            <p className="text-sm text-muted-foreground">{t('expenses.typesTracked')}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-3">
-            <CardDescription>Average</CardDescription>
+            <CardDescription>{t('expenses.average')}</CardDescription>
             <CardTitle className="text-2xl">
-              {formatCurrency(expenses.length > 0 ? totalExpenses / expenses.length : 0)}
+              {format(expenses.length > 0 ? totalExpenses / expenses.length : 0)}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">Per expense</p>
+            <p className="text-sm text-muted-foreground">{t('expenses.perExpense')}</p>
           </CardContent>
         </Card>
       </div>
 
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold">Recent Expenses</h2>
+          <h2 className="text-xl font-semibold">{t('expenses.recentExpenses')}</h2>
           <div className="flex gap-2">
             {["week", "month", "year"].map((period) => (
               <Button
@@ -268,7 +265,7 @@ const Expenses = () => {
                 size="sm"
                 onClick={() => setSelectedPeriod(period)}
               >
-                {period.charAt(0).toUpperCase() + period.slice(1)}
+                {t(`reports.${period}`)}
               </Button>
             ))}
           </div>
@@ -277,8 +274,8 @@ const Expenses = () => {
         {expenses.length === 0 ? (
           <div className="text-center py-12">
             <TrendingDown className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No expenses yet</h3>
-            <p className="text-muted-foreground">Start tracking your business expenses</p>
+            <h3 className="text-lg font-semibold mb-2">{t('expenses.noExpenses')}</h3>
+            <p className="text-muted-foreground">{t('expenses.startTracking')}</p>
           </div>
         ) : (
           expenses.map((expense) => (
@@ -289,7 +286,7 @@ const Expenses = () => {
                     <div className="flex items-center gap-2">
                       <h3 className="font-semibold">{expense.category}</h3>
                       {!expense.synced && (
-                        <Badge variant="outline" className="text-xs">Pending sync</Badge>
+                        <Badge variant="outline" className="text-xs">{t('common.pendingSync')}</Badge>
                       )}
                     </div>
                     {expense.description && (
@@ -302,7 +299,7 @@ const Expenses = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <p className="text-xl font-bold text-error">
-                      {formatCurrency(Number(expense.amount))}
+                      {format(Number(expense.amount))}
                     </p>
                     <Button variant="ghost" size="icon" onClick={() => handleEdit(expense)}>
                       <Edit className="h-4 w-4" />

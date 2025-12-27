@@ -7,6 +7,10 @@ import { AdBanner } from "@/components/AdBanner";
 import { SyncStatus } from "@/components/SyncStatus";
 import { useAuth } from "@/contexts/AuthContext";
 import { migrateFromLocalStorage } from "@/lib/migrate";
+import { useOfflineInventory } from "@/hooks/useOfflineInventory";
+import { useOfflineInvoices } from "@/hooks/useOfflineInvoices";
+import { useOfflineSuppliers } from "@/hooks/useOfflineSuppliers";
+import { useTranslation } from "react-i18next";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,9 +21,23 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const Home = () => {
+  const { t } = useTranslation();
   const { user, signOut } = useAuth();
   const [greeting, setGreeting] = useState("Welcome");
   const [businessName, setBusinessName] = useState("");
+
+  // Real data from offline hooks
+  const { items: inventoryItems, isLoading: inventoryLoading } = useOfflineInventory();
+  const { invoices, isLoading: invoicesLoading } = useOfflineInvoices();
+  const { suppliers, isLoading: suppliersLoading } = useOfflineSuppliers();
+
+  // Calculate real stats
+  const totalItems = inventoryItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
+  const lowStockItems = inventoryItems.filter(
+    (item) => item.low_stock_threshold && item.quantity <= item.low_stock_threshold
+  ).length;
+  const pendingInvoices = invoices.filter(inv => inv.status === "pending").length;
+  const activeSuppliers = suppliers.length;
 
   useEffect(() => {
     // Load business name
@@ -31,36 +49,36 @@ const Home = () => {
 
     // Set greeting based on time
     const hour = new Date().getHours();
-    if (hour < 12) setGreeting("Good morning");
-    else if (hour < 17) setGreeting("Good afternoon");
-    else setGreeting("Good evening");
+    if (hour < 12) setGreeting(t('home.goodMorning'));
+    else if (hour < 17) setGreeting(t('home.goodAfternoon'));
+    else setGreeting(t('home.goodEvening'));
 
     // Migrate data from localStorage to IndexedDB if user is logged in
     if (user?.id) {
       migrateFromLocalStorage(user.id);
     }
-  }, [user]);
+  }, [user, t]);
 
   const features = [
     {
-      title: "Inventory",
-      description: "Track stock levels and manage items",
+      title: t('nav.inventory'),
+      description: t('home.inventoryDesc'),
       icon: Package,
       path: "/inventory",
       color: "from-primary/30 to-primary/10",
       iconColor: "text-primary",
     },
     {
-      title: "Invoicing",
-      description: "Create professional invoices",
+      title: t('nav.invoicing'),
+      description: t('home.invoicingDesc'),
       icon: FileText,
       path: "/invoicing",
       color: "from-secondary/30 to-secondary/10",
       iconColor: "text-secondary",
     },
     {
-      title: "Suppliers",
-      description: "Manage your supplier contacts",
+      title: t('nav.suppliers'),
+      description: t('home.suppliersDesc'),
       icon: Users,
       path: "/suppliers",
       color: "from-accent/30 to-accent/10",
@@ -70,29 +88,29 @@ const Home = () => {
 
   const stats = [
     {
-      label: "Total Items",
-      value: "0",
+      label: t('home.totalItems'),
+      value: inventoryLoading ? "..." : totalItems.toString(),
       icon: ShoppingCart,
       color: "text-primary",
       bgColor: "bg-primary/10",
     },
     {
-      label: "Pending Invoices",
-      value: "0",
+      label: t('home.pendingInvoices'),
+      value: invoicesLoading ? "..." : pendingInvoices.toString(),
       icon: FileText,
       color: "text-accent",
       bgColor: "bg-accent/10",
     },
     {
-      label: "Active Suppliers",
-      value: "0",
+      label: t('home.activeSuppliers'),
+      value: suppliersLoading ? "..." : activeSuppliers.toString(),
       icon: Users,
       color: "text-secondary",
       bgColor: "bg-secondary/10",
     },
     {
-      label: "Low Stock Items",
-      value: "0",
+      label: t('home.lowStockItems'),
+      value: inventoryLoading ? "..." : lowStockItems.toString(),
       icon: AlertCircle,
       color: "text-destructive",
       bgColor: "bg-destructive/10",
@@ -113,7 +131,7 @@ const Home = () => {
                 </span>
               )}
             </h1>
-            <p className="text-muted-foreground">Dashboard · {new Date().toLocaleDateString()}</p>
+            <p className="text-muted-foreground">{t('home.dashboard')} · {new Date().toLocaleDateString()}</p>
           </div>
 
           <div className="flex items-center gap-3">
@@ -130,7 +148,7 @@ const Home = () => {
               <DropdownMenuContent align="end" className="w-56 bg-card z-50">
                 <DropdownMenuLabel>
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium">My Account</p>
+                    <p className="text-sm font-medium">{t('home.myAccount')}</p>
                     {user?.email && (
                       <p className="text-xs text-muted-foreground">{user.email}</p>
                     )}
@@ -140,20 +158,20 @@ const Home = () => {
                 <DropdownMenuItem asChild>
                   <Link to="/profile" className="flex items-center cursor-pointer">
                     <User className="mr-2 h-4 w-4" />
-                    <span>Profile</span>
+                    <span>{t('nav.profile')}</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link to="/finances" className="flex items-center cursor-pointer">
                     <PieChart className="mr-2 h-4 w-4" />
-                    <span>Finances</span>
+                    <span>{t('nav.finances')}</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link to="/settings" className="flex items-center cursor-pointer">
                     <SettingsIcon className="mr-2 h-4 w-4" />
-                    <span>Settings</span>
+                    <span>{t('nav.settings')}</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
@@ -162,7 +180,7 @@ const Home = () => {
                   className="text-destructive focus:text-destructive cursor-pointer"
                 >
                   <LogOut className="mr-2 h-4 w-4" />
-                  <span>Sign Out</span>
+                  <span>{t('auth.signOut')}</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -195,7 +213,7 @@ const Home = () => {
 
         {/* Quick Actions */}
         <div className="mb-6">
-          <h2 className="text-xl font-semibold text-foreground mb-4">Quick Actions</h2>
+          <h2 className="text-xl font-semibold text-foreground mb-4">{t('home.quickActions')}</h2>
           <div className="grid gap-4 md:grid-cols-3 animate-fade-in" style={{ animationDelay: "0.3s" }}>
             {features.map((feature) => (
               <Link key={feature.path} to={feature.path} className="group">
@@ -211,7 +229,7 @@ const Home = () => {
                   </CardHeader>
                   <CardContent>
                     <Button variant="ghost" className="w-full justify-between group/btn">
-                      Open
+                      {t('common.open')}
                       <ArrowRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
                     </Button>
                   </CardContent>
@@ -223,13 +241,13 @@ const Home = () => {
 
         {/* Recent Activity Placeholder */}
         <div className="animate-fade-in" style={{ animationDelay: "0.4s" }}>
-          <h2 className="text-xl font-semibold text-foreground mb-4">Recent Activity</h2>
+          <h2 className="text-xl font-semibold text-foreground mb-4">{t('home.recentActivity')}</h2>
           <Card>
             <CardContent className="py-12 text-center">
               <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground mb-2">No recent activity yet</p>
+              <p className="text-muted-foreground mb-2">{t('home.noRecentActivity')}</p>
               <p className="text-sm text-muted-foreground">
-                Start by adding inventory items or creating your first invoice
+                {t('home.startByAdding')}
               </p>
             </CardContent>
           </Card>
